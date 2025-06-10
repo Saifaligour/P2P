@@ -97,7 +97,7 @@ const ChatScreen = () => {
       time: '23:41'
     }
   ]);
-  
+
   const [text, setText] = useState('');
   const [keyboardHeight, setKeyboardHeight] = useState(0);
   const [isKeyboardVisible, setIsKeyboardVisible] = useState(false);
@@ -151,6 +151,18 @@ const ChatScreen = () => {
       time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
     };
     setMessages(prev => [newMsg, ...prev]);
+    setTimeout(() => {
+
+      const newMsg = {
+        id: Date.now().toString(),
+        type: 'message',
+        text: 'I am new agent,can not understand human lagnuage',
+        sender: 'other',
+        time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+      };
+      setMessages(prev => [newMsg, ...prev]);
+
+    });
     setText('');
     // Keyboard.dismiss();
   };
@@ -164,7 +176,7 @@ const ChatScreen = () => {
         </View>
       );
     }
-    
+
     return (
       <View style={[
         styles.messageContainer,
@@ -184,18 +196,18 @@ const ChatScreen = () => {
   return (
     <SafeAreaView style={styles.container}>
       <StatusBar barStyle="dark-content" backgroundColor="#f0f2f5" />
-      
+
       {/* Header */}
       <View style={styles.header}>
         <TouchableOpacity style={styles.backButton}>
           <Ionicons name="arrow-back" size={24} color="#075e54" />
         </TouchableOpacity>
-        
+
         <View style={styles.headerInfo}>
           <Text style={styles.roomName}>saif</Text>
           <Text style={styles.memberCount}>2 members</Text>
         </View>
-        
+
         <View style={styles.headerIcons}>
           <TouchableOpacity style={styles.headerIcon}>
             <Ionicons name="videocam" size={24} color="#075e54" />
@@ -208,43 +220,43 @@ const ChatScreen = () => {
           </TouchableOpacity>
         </View>
       </View>
-      
+
       {/* Date separator */}
       <View style={styles.dateSeparator}>
         <Text style={styles.dateText}>Thursday, 5</Text>
       </View>
-      
+
       {/* Messages */}
-      <KeyboardAvoidingView 
-      style={[
-        styles.messagesWrapper,
-            {  
-              paddingBottom: isKeyboardVisible 
-                ? keyboardHeight + 35  // Extra space when keyboard is open
-                : 35               // Base padding
-            }
-      ]}
+      <KeyboardAvoidingView
+        style={[
+          styles.messagesWrapper,
+          {
+            paddingBottom: isKeyboardVisible
+              ? keyboardHeight + 35  // Extra space when keyboard is open
+              : 35               // Base padding
+          }
+        ]}
       >
-      <FlatList
-        ref={flatListRef}
-        data={messages}
-        renderItem={renderMessage}
-        keyExtractor={item => item.id}
-        inverted
+        <FlatList
+          ref={flatListRef}
+          data={messages}
+          renderItem={renderMessage}
+          keyExtractor={item => item.id}
+          inverted
           contentContainerStyle={[
             styles.messagesContainer,
           ]}
-        showsVerticalScrollIndicator={false}
+          showsVerticalScrollIndicator={false}
           keyboardDismissMode="interactive"
-          onScrollToIndexFailed={() => {}}
-      />
+          onScrollToIndexFailed={() => { }}
+        />
       </KeyboardAvoidingView>
-      
+
       {/* Input area */}
-      <Animated.View 
+      <Animated.View
         style={[
           styles.inputContainer,
-          { 
+          {
             transform: [{ translateY: inputContainerTranslateY }],
             paddingBottom: Platform.OS === 'ios' ? 30 : 20
           }
@@ -253,11 +265,11 @@ const ChatScreen = () => {
         <TouchableOpacity style={styles.emojiButton}>
           <Ionicons name="happy-outline" size={24} color="gray" />
         </TouchableOpacity>
-        
+
         <TouchableOpacity style={styles.attachmentButton}>
           <Ionicons name="attach-outline" size={24} color="gray" />
         </TouchableOpacity>
-        
+
         <TextInput
           style={styles.textInput}
           placeholder="Type a message"
@@ -272,7 +284,7 @@ const ChatScreen = () => {
             }
           }}
         />
-        
+
         {text ? (
           <TouchableOpacity style={styles.sendButton} onPress={sendMessage}>
             <Ionicons name="send" size={20} color="white" />
@@ -301,7 +313,7 @@ const styles = StyleSheet.create({
     borderBottomColor: '#ddd',
   },
   headerInfo: {
-    marginLeft:5,
+    marginLeft: 5,
     flex: 1,
   },
   backButton: {
@@ -411,7 +423,7 @@ const styles = StyleSheet.create({
     borderTopWidth: 1,
     borderTopColor: '#ddd',
   },
-   textInput: {
+  textInput: {
     flex: 1,
     backgroundColor: 'white',
     borderRadius: 12,
