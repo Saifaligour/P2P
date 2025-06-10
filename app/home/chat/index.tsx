@@ -1,7 +1,10 @@
 import { Ionicons } from '@expo/vector-icons';
-import React, { useRef, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import {
+  Animated,
   FlatList,
+  Keyboard,
+  KeyboardAvoidingView,
   Platform,
   SafeAreaView,
   StatusBar,
@@ -14,6 +17,13 @@ import {
 
 const ChatScreen = () => {
   const [messages, setMessages] = useState([
+    {
+      id: '12',
+      type: 'message',
+      text: 'hi how are you',
+      sender: 'me',
+      time: '16:35'
+    },
     {
       id: '1',
       type: 'system',
@@ -89,7 +99,47 @@ const ChatScreen = () => {
   ]);
   
   const [text, setText] = useState('');
+  const [keyboardHeight, setKeyboardHeight] = useState(0);
+  const [isKeyboardVisible, setIsKeyboardVisible] = useState(false);
   const flatListRef = useRef(null);
+  const inputContainerTranslateY = useRef(new Animated.Value(0)).current;
+
+  useEffect(() => {
+    const keyboardDidShowListener = Keyboard.addListener(
+      Platform.OS === 'ios' ? 'keyboardWillShow' : 'keyboardDidShow',
+      (e) => {
+        setIsKeyboardVisible(true);
+        setKeyboardHeight(e.endCoordinates.height);
+        Animated.timing(inputContainerTranslateY, {
+          toValue: -e.endCoordinates.height,
+          duration: 250,
+          useNativeDriver: true,
+        }).start(() => {
+          if (flatListRef.current) {
+            flatListRef.current.scrollToOffset({ animated: true, offset: 0 });
+          }
+        });
+      }
+    );
+
+    const keyboardDidHideListener = Keyboard.addListener(
+      Platform.OS === 'ios' ? 'keyboardWillHide' : 'keyboardDidHide',
+      () => {
+        setIsKeyboardVisible(false);
+        setKeyboardHeight(0);
+        Animated.timing(inputContainerTranslateY, {
+          toValue: 0,
+          duration: 250,
+          useNativeDriver: true,
+        }).start();
+      }
+    );
+
+    return () => {
+      keyboardDidShowListener.remove();
+      keyboardDidHideListener.remove();
+    };
+  }, []);
 
   const sendMessage = () => {
     if (text.trim() === '') return;
@@ -102,6 +152,7 @@ const ChatScreen = () => {
     };
     setMessages(prev => [newMsg, ...prev]);
     setText('');
+    // Keyboard.dismiss();
   };
 
   const renderMessage = ({ item }) => {
@@ -141,7 +192,7 @@ const ChatScreen = () => {
         </TouchableOpacity>
         
         <View style={styles.headerInfo}>
-          <Text style={styles.roomName}>tsdfs</Text>
+          <Text style={styles.roomName}>saif</Text>
           <Text style={styles.memberCount}>2 members</Text>
         </View>
         
@@ -164,18 +215,41 @@ const ChatScreen = () => {
       </View>
       
       {/* Messages */}
+      <KeyboardAvoidingView 
+      style={[
+        styles.messagesWrapper,
+            {  
+              paddingBottom: isKeyboardVisible 
+                ? keyboardHeight + 35  // Extra space when keyboard is open
+                : 35               // Base padding
+            }
+      ]}
+      >
       <FlatList
         ref={flatListRef}
         data={messages}
         renderItem={renderMessage}
         keyExtractor={item => item.id}
         inverted
-        contentContainerStyle={styles.messagesContainer}
+          contentContainerStyle={[
+            styles.messagesContainer,
+          ]}
         showsVerticalScrollIndicator={false}
+          keyboardDismissMode="interactive"
+          onScrollToIndexFailed={() => {}}
       />
+      </KeyboardAvoidingView>
       
       {/* Input area */}
-      <View style={styles.inputContainer}>
+      <Animated.View 
+        style={[
+          styles.inputContainer,
+          { 
+            transform: [{ translateY: inputContainerTranslateY }],
+            paddingBottom: Platform.OS === 'ios' ? 30 : 20
+          }
+        ]}
+      >
         <TouchableOpacity style={styles.emojiButton}>
           <Ionicons name="happy-outline" size={24} color="gray" />
         </TouchableOpacity>
@@ -190,6 +264,13 @@ const ChatScreen = () => {
           value={text}
           onChangeText={setText}
           multiline
+          onFocus={() => {
+            if (flatListRef.current) {
+              setTimeout(() => {
+                flatListRef.current.scrollToOffset({ animated: true, offset: 0 });
+              }, 100);
+            }
+          }}
         />
         
         {text ? (
@@ -201,7 +282,7 @@ const ChatScreen = () => {
             <Ionicons name="mic-outline" size={24} color="gray" />
           </TouchableOpacity>
         )}
-      </View>
+      </Animated.View>
     </SafeAreaView>
   );
 };
@@ -219,12 +300,13 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
     borderBottomColor: '#ddd',
   },
+  headerInfo: {
+    marginLeft:5,
+    flex: 1,
+  },
   backButton: {
     padding: 5,
     marginRight: 10,
-  },
-  headerInfo: {
-    flex: 1,
   },
   roomName: {
     fontSize: 18,
@@ -245,7 +327,7 @@ const styles = StyleSheet.create({
   },
   dateSeparator: {
     alignSelf: 'center',
-    backgroundColor: '#e5ddd5',
+    backgroundColor: 'rgba(0,0,0,0.1)',
     paddingHorizontal: 10,
     paddingVertical: 3,
     borderRadius: 10,
@@ -255,13 +337,17 @@ const styles = StyleSheet.create({
     color: 'gray',
     fontSize: 12,
   },
+  messagesWrapper: {
+    flex: 1,
+  },
   messagesContainer: {
-    paddingTop: 10,
-    paddingBottom: 70,
+    paddingTop: 15,
+    paddingHorizontal: 12,
+    paddingBottom: 15,
   },
   messageContainer: {
-    paddingHorizontal: 10,
-    marginVertical: 4,
+    paddingHorizontal: 12,
+    marginVertical: 6,
   },
   myMessageContainer: {
     alignItems: 'flex-end',
@@ -271,24 +357,24 @@ const styles = StyleSheet.create({
   },
   messageBubble: {
     maxWidth: '80%',
-    paddingVertical: 8,
-    paddingHorizontal: 12,
-    borderRadius: 8,
+    paddingVertical: 10,
+    paddingHorizontal: 14,
+    borderRadius: 12,
   },
   myMessageBubble: {
     backgroundColor: '#DCF8C6',
-    borderTopRightRadius: 0,
+    borderTopRightRadius: 4,
   },
   otherMessageBubble: {
     backgroundColor: 'white',
-    borderTopLeftRadius: 0,
+    borderTopLeftRadius: 4,
   },
   messageText: {
     fontSize: 16,
     color: 'black',
   },
   messageTime: {
-    fontSize: 10,
+    fontSize: 11,
     color: 'gray',
     alignSelf: 'flex-end',
     marginTop: 4,
@@ -296,31 +382,45 @@ const styles = StyleSheet.create({
   systemMessageContainer: {
     alignSelf: 'center',
     backgroundColor: 'rgba(0,0,0,0.1)',
-    paddingHorizontal: 12,
-    paddingVertical: 4,
-    borderRadius: 10,
+    paddingHorizontal: 14,
+    paddingVertical: 6,
+    borderRadius: 12,
     marginVertical: 8,
   },
   systemMessageText: {
-    fontSize: 12,
+    fontSize: 13,
     color: 'gray',
     textAlign: 'center',
   },
   systemMessageTime: {
-    fontSize: 10,
+    fontSize: 11,
     color: 'gray',
     textAlign: 'center',
     marginTop: 2,
   },
   inputContainer: {
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
     flexDirection: 'row',
     alignItems: 'center',
-    padding: 8,
-    paddingBottom: 15, // Increased from default to move up
+    paddingHorizontal: 12,
+    paddingTop: 12,
     backgroundColor: '#f0f2f5',
     borderTopWidth: 1,
     borderTopColor: '#ddd',
-    marginBottom: Platform.OS === 'ios' ? 5 : 0
+  },
+   textInput: {
+    flex: 1,
+    backgroundColor: 'white',
+    borderRadius: 12,
+    paddingHorizontal: 6,
+    paddingVertical: 10,
+    fontSize: 16,
+    maxHeight: 120,
+    marginHorizontal: 5,
+    minHeight: 44,
   },
   emojiButton: {
     padding: 8,
@@ -328,28 +428,18 @@ const styles = StyleSheet.create({
   attachmentButton: {
     padding: 8,
   },
-  textInput: {
-    flex: 1,
-    backgroundColor: 'white',
-    borderRadius: 20,
-    paddingHorizontal: 15,
-    paddingVertical: 8,
-    fontSize: 16,
-    maxHeight: 100,
-    marginHorizontal: 5,
-  },
   sendButton: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
+    width: 44,
+    height: 44,
+    borderRadius: 22,
     backgroundColor: '#075e54',
     justifyContent: 'center',
     alignItems: 'center',
-    marginLeft: 5,
+    marginLeft: 8,
   },
   micButton: {
     padding: 8,
-    marginLeft: 5,
+    marginLeft: 8,
   },
 });
 

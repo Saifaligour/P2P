@@ -4,13 +4,14 @@ import React, { useState } from "react";
 import {
     FlatList,
     Image,
+    Platform,
     SafeAreaView,
     StatusBar,
     StyleSheet,
     Text,
     TextInput,
     TouchableOpacity,
-    View,
+    View
 } from "react-native";
 
 const dummyChats = [
@@ -95,8 +96,6 @@ export default function UserListScreen() {
         <SafeAreaView style={styles.safe}>
             <StatusBar barStyle="dark-content" />
             <View style={styles.container}>
-                <Text style={styles.title}>Inbox</Text>
-
                 <View style={styles.searchWrapper}>
                     <TextInput
                         style={styles.searchInput}
@@ -129,19 +128,13 @@ const styles = StyleSheet.create({
         flex: 1,
         paddingHorizontal: 16,
     },
-    title: {
-        fontSize: 22,
-        fontWeight: "600",
-        marginTop: 10,
-        marginBottom: 10,
-        color: "#222",
-    },
     searchWrapper: {
         backgroundColor: "#fff",
-        borderRadius: 20,
+        borderRadius: 15,
         paddingHorizontal: 16,
-        paddingVertical: 8,
+        paddingVertical: Platform.OS === 'ios' ? 10 : 3,
         marginBottom: 10,
+        marginTop:  Platform.OS === 'ios' ? 10 : 40,
         elevation: 1,
     },
     searchInput: {
