@@ -1,6 +1,7 @@
-import { styles } from '@/style/UserChatStyles';
+import { useChat } from '@/hooks/useChat';
+import { styles } from '@/style/ChatStyles';
 import { Ionicons } from '@expo/vector-icons';
-import React, { useRef, useState } from 'react';
+import React, { useRef } from 'react';
 import {
   FlatList,
   KeyboardAvoidingView,
@@ -13,48 +14,10 @@ import {
   View
 } from 'react-native';
 
-
 const ChatScreen = () => {
-  const [messages, setMessages] = useState([
-    { id: '12', type: 'message', text: 'hi how are you', sender: 'me', time: '16:35' },
-    { id: '1', type: 'system', text: 's sf and You joined the room 🌤️', time: '16:33' },
-    { id: '2', type: 'message', text: 'hi', sender: 'other', time: '16:34' },
-    { id: '3', type: 'message', text: 'ohv', sender: 'other', time: '16:34' },
-    { id: '4', type: 'message', text: 'hrh', sender: 'other', time: '16:34' },
-    { id: '5', type: 'system', text: 'Message deleted', time: '16:34' },
-    { id: '6', type: 'system', text: 's sf Admin', time: '16:35' },
-    { id: '7', type: 'message', text: 'hi how are you', sender: 'other', time: '16:35' },
-    { id: '8', type: 'message', text: 'i want to know more about you', sender: 'other', time: '16:35' },
-    { id: '9', type: 'message', text: 'can you help me to do this', sender: 'other', time: '16:35' },
-    { id: '10', type: 'system', text: 's sf has started a call', time: '16:36' },
-    { id: '11', type: 'system', text: 'Message deleted', time: '23:41' },
-  ]);
 
-  const [text, setText] = useState('');
-  const flatListRef = useRef(null);
-
-  const sendMessage = () => {
-    if (text.trim() === '') return;
-    const newMsg = {
-      id: Date.now().toString(),
-      type: 'message',
-      text,
-      sender: 'me',
-      time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-    };
-    setMessages(prev => [newMsg, ...prev]);
-    setTimeout(() => {
-      const newMsg = {
-        id: Date.now().toString(),
-        type: 'message',
-        text: 'I am new agent, can not understand human language',
-        sender: 'other',
-        time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-      };
-      setMessages(prev => [newMsg, ...prev]);
-    }, 500);
-    setText('');
-  };
+  const flatListRef = useRef(null)
+  const { messages, text, setText, sendMessage } = useChat();
 
   const renderMessage = ({ item }) => {
     if (item.type === 'system') {
@@ -154,9 +117,9 @@ const ChatScreen = () => {
       </View>
 
       {/* Messages + Input */}
-      <KeyboardAvoidingView
+     <KeyboardAvoidingView
         style={{ flex: 1 }}
-        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+        behavior={Platform.OS === 'ios' ? 'padding' : 'padding'}
         keyboardVerticalOffset={90}
       >
         <FlatList
@@ -169,12 +132,12 @@ const ChatScreen = () => {
           showsVerticalScrollIndicator={false}
           keyboardDismissMode="interactive"
         />
+         
         {renderInputBar()}
       
       </KeyboardAvoidingView>
     </SafeAreaView>
   );
 };
-
 
 export default ChatScreen;

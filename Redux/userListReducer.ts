@@ -1,8 +1,8 @@
 // store/userListReducer.ts
 import { User } from "@/hooks/useUserList";
 
-export const SET_SEARCH = "SET_SEARCH";
-export const SET_USER_LIST = "SET_USER_LIST";
+ const SET_SEARCH = "SET_SEARCH";
+ const SET_USER_LIST = "SET_USER_LIST";
 
 
 const initialState = {
