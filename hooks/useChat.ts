@@ -12,7 +12,8 @@ export const useChat = () => {
     const dummyMessages = [
       { id: '1', type: 'system', text: 'You joined the room', time: '16:30' },
       { id: '2', type: 'message', text: 'Hey there!', sender: 'other', time: '16:31' },
-      { id: '3', type: 'message', text: 'How are you?', sender: 'me', time: '16:32' },
+      { id: '3', type: 'date', text: 'Thrusday, 5', sender: 'me', time: '16:32' },
+      { id: '4', type: 'message', text: 'How are you?', sender: 'me', time: '16:32' },
     ];
 
     dispatch(loadMessages(dummyMessages));
