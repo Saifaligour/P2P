@@ -1,7 +1,7 @@
+import { checkAuth } from "@/backend/Auth";
 import { router } from "expo-router";
 import { useEffect } from "react";
 import { ActivityIndicator, StyleSheet, Text, View } from "react-native";
-import { checkAuth } from "../backend/Auth";
 
 export default function SplashScreen() {
   useEffect(() => {

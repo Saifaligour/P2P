@@ -1,8 +1,8 @@
 
+import { login } from "@/backend/Auth";
 import { router } from "expo-router";
 import { useState } from "react";
 import { Alert, StyleSheet, Text, TextInput, TouchableOpacity, View } from "react-native";
-import { login } from "../backend/Auth";
 
 export default function LoginScreen() {
   const [name, setName] = useState("");
