@@ -5,7 +5,6 @@ import React, { useRef } from 'react';
 import {
   FlatList,
   KeyboardAvoidingView,
-  Platform,
   SafeAreaView,
   StatusBar,
   Text,
@@ -119,7 +118,7 @@ const ChatScreen = () => {
       {/* Messages + Input */}
      <KeyboardAvoidingView
         style={{ flex: 1 }}
-        behavior={Platform.OS === 'ios' ? 'padding' : 'padding'}
+        behavior={'padding'}
         keyboardVerticalOffset={90}
       >
         <FlatList
