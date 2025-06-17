@@ -12,7 +12,7 @@ export const styles = StyleSheet.create({
     alignItems: 'center',
     paddingVertical: 10,
     paddingHorizontal: 8,
-    backgroundColor: '#fff',
+    backgroundColor: '#f4f7fc', // match user list header color
     borderBottomWidth: 1,
     borderBottomColor: '#ddd',
     elevation: 2,
