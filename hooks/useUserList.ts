@@ -1,4 +1,5 @@
 import { setSearch, setUserList } from "@/Redux/userListReducer";
+import { addGroupDetails } from '@/backend/Api';
 import { useRouter } from "expo-router";
 import { useMemo } from "react";
 import { useDispatch, useSelector } from "react-redux";
@@ -42,29 +43,20 @@ export const useUserList = () => {
   const handleOpenChat = (user: User) => {
     router.push("/home/chat");
   };
-
+  
   const handleCreateGroup = () => {
     router.push("/home/UserScreen/createGroup");
   };
 
-  const addGroup = ({ groupName, groupDescription, groupDP }) => {
-    const isAvatarImage = !!groupDP;
-    const newGroup = {
-      id: Date.now().toString(),
-      roomId: "room_" + Math.random().toString(36).slice(2, 10),
-      name: groupName,
-      message: groupDescription || '',
-      time: new Date().toLocaleString(),
-      avatar: groupDP || groupName.charAt(0).toUpperCase(),
-      avatarType: isAvatarImage ? 'image' : 'name',
-      isOnline: false,
-      isRead: false,
-      isGroup: true,
-      members: [],
-      groupAdmin: '',
-      createdAt: new Date().toISOString(),
-    } as User;
-    dispatch(setUserList([newGroup, ...users]));
+
+  const addGroup = async (groupDetails) => {
+    try {
+      await addGroupDetails(groupDetails); // send to server
+    } catch (e) {
+      // Optionally handle error (e.g., show feedback)
+      console.error('Failed to add group to server:', e);
+    }
+    dispatch(setUserList([groupDetails, ...users]));
   };
 
   const handleSearchChange = (text: string) => {

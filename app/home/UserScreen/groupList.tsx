@@ -23,7 +23,7 @@ export default function UserListScreen() {
           onPlus={handleCreateGroup}
           onScanQR={() => { /* TODO: handle scan QR action */ }} 
         />
-        <SearchBar value={search} onChange={handleSearchChange} />
+          <SearchBar value={search} onChange={handleSearchChange} />
         <FlatList
           data={filteredUsers}
           keyExtractor={(item) => item.id}

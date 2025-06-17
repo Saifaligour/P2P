@@ -15,7 +15,7 @@ export const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingVertical: Platform.OS === "ios" ? 10 : 3,
     marginBottom: 10,
-    marginTop: Platform.OS === "ios" ? 10 : 40,
+    marginTop: Platform.OS === "ios" ? 10 : 6,
     elevation: 1,
   },
   searchInput: {

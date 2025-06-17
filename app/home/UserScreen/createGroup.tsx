@@ -23,6 +23,7 @@ export default function CreateGroupScreen() {
     updateGroupDP,
     submitGroup,
     reset,
+    joinGroup,
   } = useCreateUser();
 
   const handleSubmit = () => {
@@ -31,8 +32,9 @@ export default function CreateGroupScreen() {
   };
 
   const handleJoinSubmit = () => {
-    // TODO: Implement join group logic
-    // For now, just reset the field
+    if (joinGroupName.trim()) {
+      joinGroup(joinGroupName);
+    }
     setJoinGroupName('');
   };
 

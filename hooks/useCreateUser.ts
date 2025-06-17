@@ -1,3 +1,4 @@
+import { fetchGroupDetails } from '@/backend/Api';
 import {
   resetCreateUser,
   setGroupDescription,
@@ -25,13 +26,38 @@ export const useCreateUser = () => {
   };
 
   const submitGroup = () => {
-    addGroup({
-      groupName,
-      groupDescription,
-      groupDP,
-    });
+     const isAvatarImage = !!groupDP;
+        const newGroup = {
+          id: Date.now().toString(),
+          roomId: "room_" + Math.random().toString(36).slice(2, 10),
+          name: groupName,
+          message: groupDescription || '',
+          time: new Date().toLocaleString(),
+          avatar: groupDP || groupName.charAt(0).toUpperCase(),
+          avatarType: isAvatarImage ? 'image' : 'name',
+          isOnline: false,
+          isRead: false,
+          isGroup: true,
+          members: [],
+          groupAdmin: '',
+          createdAt: new Date().toISOString(),
+        }
+    addGroup(newGroup);
     reset();
     goBack();
+  };
+
+  const joinGroup = async (roomId: string) => {
+    try {
+      const group = await fetchGroupDetails(roomId);
+      if (group) {
+        addGroup(group);
+        goBack();
+      }
+    } catch (error) {
+      // Optionally handle error (e.g., show feedback)
+      console.error('Failed to join group:', error);
+    }
   };
 
   return {
@@ -43,5 +69,6 @@ export const useCreateUser = () => {
     updateGroupDP,
     reset,
     submitGroup,
+    joinGroup,
   };
 };

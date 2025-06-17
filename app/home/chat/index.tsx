@@ -1,4 +1,3 @@
-import { BackButton } from '@/components/ui/BackButton';
 import { useChat } from '@/hooks/useChat';
 import { styles } from '@/style/ChatStyles';
 import { Ionicons } from '@expo/vector-icons';
@@ -18,7 +17,9 @@ import {
 // Header Component
 const Header = memo(() => (
   <View style={styles.header}>
-    <BackButton color="#333" size={24} style={styles.backButton} />
+    <TouchableOpacity style={styles.backButton}>
+      <Ionicons name="arrow-back" size={24} color="#333" />
+    </TouchableOpacity>
 
     <View style={styles.headerInfo}>
       <Text style={styles.roomName}>Saif</Text>
