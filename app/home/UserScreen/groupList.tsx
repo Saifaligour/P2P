@@ -1,9 +1,9 @@
 import React from "react";
 import {
-    FlatList,
-    SafeAreaView,
-    StatusBar,
-    View
+  FlatList,
+  SafeAreaView,
+  StatusBar,
+  View
 } from "react-native";
 
 import SearchBar from "@/components/userList/SearchBar";
