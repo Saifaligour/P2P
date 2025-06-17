@@ -16,8 +16,7 @@ import {
 } from 'react-native';
 
 // Header Component
-const Header = memo(() => {
-  const { activeUser } = useChat();
+const Header = memo(({ activeUser }: { activeUser: any }) => {
   return (
     <View style={styles.header}>
       <BackButton style={styles.backButton} color="#333" size={24} />
@@ -133,12 +132,12 @@ InputBar.displayName = "InputBar";
 
 const ChatScreen = () => {
   const flatListRef = useRef(null);
-  const { messages, text, setText, sendMessage } = useChat();
+  const { messages, text, setText, sendMessage, activeUser } = useChat();
 
   return (
     <SafeAreaView style={styles.container}>
       <StatusBar barStyle="dark-content" backgroundColor="#f0f2f5" />
-      <Header />
+      <Header activeUser={activeUser} />
   
       <KeyboardAvoidingView
         style={{ flex: 1 }}

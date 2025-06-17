@@ -43,8 +43,8 @@ export const useChat = () => {
       }
     };
     joinRoom();
-    // Reset joinRoomCalled if activeUser changes to null or a different room
-    if (!activeUser || activeUser.roomId !== lastJoinedRoomId.current) {
+    // Reset joinRoomCalled if activeUser is null
+    if (!activeUser) {
       joinRoomCalled.current = false;
     }
   }, [activeUser]);
