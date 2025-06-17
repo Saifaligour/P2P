@@ -15,9 +15,9 @@ import {
 } from 'react-native';
 
 // Header Component
-const Header = memo(() => (
+const Header = memo(({ goBack }: { goBack: () => void }) => (
   <View style={styles.header}>
-    <TouchableOpacity style={styles.backButton}>
+    <TouchableOpacity style={styles.backButton} onPress={goBack}>
       <Ionicons name="arrow-back" size={24} color="#333" />
     </TouchableOpacity>
 
@@ -131,12 +131,12 @@ InputBar.displayName = "InputBar";
 
 const ChatScreen = () => {
   const flatListRef = useRef(null);
-  const { messages, text, setText, sendMessage } = useChat();
+  const { messages, text, setText, sendMessage, goBack } = useChat();
 
   return (
     <SafeAreaView style={styles.container}>
       <StatusBar barStyle="dark-content" backgroundColor="#f0f2f5" />
-      <Header />
+      <Header goBack={goBack} />
   
       <KeyboardAvoidingView
         style={{ flex: 1 }}

@@ -1,9 +1,11 @@
 import { addMessage, loadMessages } from '@/Redux/chatReducer';
 import { useEffect, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
+import { useRouter } from 'expo-router';
 
 export const useChat = () => {
   const dispatch = useDispatch();
+  const router = useRouter();
   const messages = useSelector((state: any) => state.chat.messages);
   const [text, setText] = useState('');
 
@@ -55,10 +57,15 @@ export const useChat = () => {
     }, 600);
   };
 
+  const goBack = () => {
+    router.back();
+  };
+
   return {
     messages,
     text,
     setText,
     sendMessage,
+    goBack,
   };
 };
