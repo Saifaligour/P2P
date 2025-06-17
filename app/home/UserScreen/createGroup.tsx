@@ -1,18 +1,19 @@
 import { BackButton } from '@/components/ui/BackButton';
+import { CreateGroupForm } from '@/components/userList/CreateGroupForm';
+import { JoinGroupForm } from '@/components/userList/JoinGroupForm';
 import { useCreateUser } from '@/hooks/useCreateUser';
-import * as ImagePicker from 'expo-image-picker';
-import React from 'react';
+import React, { useState } from 'react';
 import {
-  Image,
   SafeAreaView,
   StyleSheet,
   Text,
-  TextInput,
   TouchableOpacity,
   View,
 } from 'react-native';
 
 export default function CreateGroupScreen() {
+  const [mode, setMode] = useState<'create' | 'join'>('create');
+  const [joinGroupName, setJoinGroupName] = useState('');
   const {
     groupName,
     groupDescription,
@@ -24,60 +25,53 @@ export default function CreateGroupScreen() {
     reset,
   } = useCreateUser();
 
-  const pickImage = async () => {
-    const result = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes: ImagePicker.MediaTypeOptions.Images,
-      allowsEditing: true,
-      aspect: [1, 1],
-      quality: 0.7,
-    });
-    if (!result.canceled && result.assets && result.assets.length > 0) {
-      updateGroupDP(result.assets[0].uri);
-    }
-  };
-
   const handleSubmit = () => {
     submitGroup();
     reset();
+  };
+
+  const handleJoinSubmit = () => {
+    // TODO: Implement join group logic
+    // For now, just reset the field
+    setJoinGroupName('');
   };
 
   return (
     <SafeAreaView style={styles.safe}>
       <BackButton />
       <View style={styles.container}>
-        <Text style={styles.label}>Group Name</Text>
-        <TextInput
-          style={styles.input}
-          placeholder="Enter group name"
-          value={groupName}
-          onChangeText={updateGroupName}
-        />
-
-        <Text style={styles.label}>Group Description (optional)</Text>
-        <TextInput
-          style={[styles.input, { height: 80 }]}
-          placeholder="Enter group description"
-          value={groupDescription}
-          onChangeText={updateGroupDescription}
-          multiline
-        />
-
-        <Text style={styles.label}>Group Display Picture (optional)</Text>
-        <TouchableOpacity style={styles.dpPicker} onPress={pickImage}>
-          {groupDP ? (
-            <Image source={{ uri: groupDP }} style={styles.dpImage} />
-          ) : (
-            <View style={styles.dpFallback}>
-              <Text style={styles.dpFallbackText}>
-                {groupName ? groupName.charAt(0).toUpperCase() : '+'}
-              </Text>
-            </View>
-          )}
-        </TouchableOpacity>
-
-        <TouchableOpacity style={styles.submitBtn} onPress={handleSubmit}>
-          <Text style={styles.submitBtnText}>Create Group</Text>
-        </TouchableOpacity>
+        <View style={{ flexDirection: 'row', justifyContent: 'center', marginBottom: 24 }}>
+          <TouchableOpacity
+            style={[styles.switchBtn, mode === 'create' && styles.switchBtnActive]}
+            onPress={() => setMode('create')}
+          >
+            <Text style={[styles.switchBtnText, mode === 'create' && styles.switchBtnTextActive]}>Create Group</Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={[styles.switchBtn, mode === 'join' && styles.switchBtnActive]}
+            onPress={() => setMode('join')}
+          >
+            <Text style={[styles.switchBtnText, mode === 'join' && styles.switchBtnTextActive]}>Join Group</Text>
+          </TouchableOpacity>
+        </View>
+        {mode === 'create' ? (
+          <CreateGroupForm
+            groupName={groupName}
+            groupDescription={groupDescription}
+            groupDP={groupDP}
+            onChangeGroupName={updateGroupName}
+            onChangeGroupDescription={updateGroupDescription}
+            onChangeGroupDP={updateGroupDP}
+            onSubmit={handleSubmit}
+          />
+        ) : (
+          <JoinGroupForm
+            joinGroupName={joinGroupName}
+            onChangeGroupName={setJoinGroupName}
+            onSubmit={handleJoinSubmit}
+            onScanQRCode={() => { /* TODO: scan QR code */ }}
+          />
+        )}
       </View>
     </SafeAreaView>
   );
@@ -143,5 +137,24 @@ const styles = StyleSheet.create({
     color: '#fff',
     fontSize: 18,
     fontWeight: '700',
+  },
+  switchBtn: {
+    flex: 1,
+    paddingVertical: 12,
+    backgroundColor: '#e0e0e0',
+    borderRadius: 8,
+    marginHorizontal: 4,
+    alignItems: 'center',
+  },
+  switchBtnActive: {
+    backgroundColor: '#0a7ea4',
+  },
+  switchBtnText: {
+    color: '#222',
+    fontSize: 16,
+    fontWeight: '600',
+  },
+  switchBtnTextActive: {
+    color: '#fff',
   },
 });
