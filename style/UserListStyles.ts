@@ -55,6 +55,19 @@ export const styles = StyleSheet.create({
     borderWidth: 2,
     borderColor: "#fff",
   },
+  avatarFallback: {
+    width: 52,
+    height: 52,
+    borderRadius: 26,
+    backgroundColor: "#d1d5db",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  avatarFallbackText: {
+    fontSize: 24,
+    color: "#555",
+    fontWeight: "700",
+  },
   chatContent: {
     flex: 1,
     justifyContent: "center",

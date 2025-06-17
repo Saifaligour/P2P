@@ -19,11 +19,19 @@ export const UserRow: React.FC<UserRowProps> = memo(({ user, onPress }) => (
     activeOpacity={0.7}
   >
     <View style={styles.avatarContainer}>
-      <Image
-        source={{ uri: user.avatar }}
-        style={styles.avatar}
-        resizeMode="cover"
-      />
+      {user.avatarType === 'name' ? (
+        <View style={styles.avatarFallback}>
+          <Text style={styles.avatarFallbackText}>
+            {user.name ? user.name.charAt(0).toUpperCase() : '?'}
+          </Text>
+        </View>
+      ) : (
+        <Image
+          source={{ uri: user.avatar }}
+          style={styles.avatar}
+          resizeMode="cover"
+        />
+      )}
       {user.isOnline && <OnlineIndicator />}
     </View>
 

@@ -12,6 +12,7 @@ export interface User {
   avatar: string;
   isOnline: boolean;
   isRead: boolean;
+  avatarType?:any;
   // Group chat fields
   members?: string[]; // user ids
   isGroup?: boolean;
@@ -47,6 +48,7 @@ export const useUserList = () => {
   };
 
   const addGroup = ({ groupName, groupDescription, groupDP }) => {
+    const isAvatarImage = !!groupDP;
     const newGroup = {
       id: Date.now().toString(),
       roomId: "room_" + Math.random().toString(36).slice(2, 10),
@@ -54,13 +56,14 @@ export const useUserList = () => {
       message: groupDescription || '',
       time: new Date().toLocaleString(),
       avatar: groupDP || groupName.charAt(0).toUpperCase(),
+      avatarType: isAvatarImage ? 'image' : 'name',
       isOnline: false,
       isRead: false,
       isGroup: true,
       members: [],
       groupAdmin: '',
       createdAt: new Date().toISOString(),
-    };
+    } as User;
     dispatch(setUserList([newGroup, ...users]));
   };
 

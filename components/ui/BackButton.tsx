@@ -1,7 +1,7 @@
-import React from 'react';
-import { TouchableOpacity, StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
+import React from 'react';
+import { StyleSheet, TouchableOpacity } from 'react-native';
 
 export const BackButton = ({ color = '#0a7ea4', size = 26, style }: { color?: string; size?: number; style?: any }) => {
   const router = useRouter();
