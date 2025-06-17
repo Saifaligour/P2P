@@ -27,17 +27,17 @@ export default function TabLayout() {
         }),
       }}>
       <Tabs.Screen
-        name="Chat"
+        name="groupList"
         options={{
-          title: 'Chat',
-          tabBarIcon: ({ color }) => <IconSymbol size={28} name="house.fill" color={color} />,
+          title: 'Groups',
+          tabBarIcon: ({ color }) => <IconSymbol size={28} name="house.fill" color={color} />, // You may want to change the icon
         }}
       />
-       <Tabs.Screen
-        name="Settings"
+      <Tabs.Screen
+        name="userList"
         options={{
-          title: 'Settings',
-          tabBarIcon: ({ color }) => <IconSymbol size={28} name="gear" color={color} />,
+          title: 'Users',
+          tabBarIcon: ({ color }) => <IconSymbol size={28} name="gear" color={color} />, // You may want to change the icon
         }}
       />
     </Tabs>
