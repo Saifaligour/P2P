@@ -5,16 +5,15 @@ import {
   setGroupDP,
   setGroupName,
 } from '@/Redux/createUserReducer';
-import { RootState } from '@/Redux/store';
+import store, { RootState } from '@/Redux/store';
+import { setUserList } from '@/Redux/userListReducer';
 import { useRouter } from 'expo-router';
 import { useDispatch, useSelector } from 'react-redux';
-import { useUserList } from './useUserList';
 
 export const useCreateUser = () => {
   const dispatch = useDispatch();
   const router = useRouter();
   const { groupName, groupDescription, groupDP } = useSelector((state: RootState) => state.createUser);
-  const { addGroup } = useUserList();
 
   const updateGroupName = (name: string) => dispatch(setGroupName(name));
   const updateGroupDescription = (desc: string) => dispatch(setGroupDescription(desc));
@@ -23,6 +22,11 @@ export const useCreateUser = () => {
 
   const goBack = () => {
     router.back();
+  };
+
+  const addGroup = (groupDetails: any) => {
+    const users = store.getState()?.userList?.users;
+    dispatch(setUserList([groupDetails, ...users]));
   };
 
   const submitGroup = () => {
