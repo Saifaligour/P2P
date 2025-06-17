@@ -1,3 +1,4 @@
+import { BackButton } from '@/components/ui/BackButton';
 import { useChat } from '@/hooks/useChat';
 import { styles } from '@/style/ChatStyles';
 import { Ionicons } from '@expo/vector-icons';
@@ -15,11 +16,9 @@ import {
 } from 'react-native';
 
 // Header Component
-const Header = memo(({ goBack }: { goBack: () => void }) => (
+const Header = memo(() => (
   <View style={styles.header}>
-    <TouchableOpacity style={styles.backButton} onPress={goBack}>
-      <Ionicons name="arrow-back" size={24} color="#333" />
-    </TouchableOpacity>
+    <BackButton color="#333" size={24} style={styles.backButton} />
 
     <View style={styles.headerInfo}>
       <Text style={styles.roomName}>Saif</Text>
@@ -131,12 +130,12 @@ InputBar.displayName = "InputBar";
 
 const ChatScreen = () => {
   const flatListRef = useRef(null);
-  const { messages, text, setText, sendMessage, goBack } = useChat();
+  const { messages, text, setText, sendMessage } = useChat();
 
   return (
     <SafeAreaView style={styles.container}>
       <StatusBar barStyle="dark-content" backgroundColor="#f0f2f5" />
-      <Header goBack={goBack} />
+      <Header />
   
       <KeyboardAvoidingView
         style={{ flex: 1 }}

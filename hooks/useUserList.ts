@@ -1,16 +1,22 @@
-import { setSearch } from "@/Redux/userListReducer"; // Adjust the import path as necessary
+import { setSearch, setUserList } from "@/Redux/userListReducer";
 import { useRouter } from "expo-router";
 import { useMemo } from "react";
 import { useDispatch, useSelector } from "react-redux";
 
 export interface User {
   id: string;
+  roomId: string;
   name: string;
   message: string;
   time: string;
   avatar: string;
   isOnline: boolean;
   isRead: boolean;
+  // Group chat fields
+  members?: string[]; // user ids
+  isGroup?: boolean;
+  groupAdmin?: string; // user id
+  createdAt?: string;
 }
 
 interface RootState {
@@ -36,6 +42,28 @@ export const useUserList = () => {
     router.push("/home/chat");
   };
 
+  const handleCreateGroup = () => {
+    router.push("/home/UserScreen/createGroup");
+  };
+
+  const addGroup = ({ groupName, groupDescription, groupDP }) => {
+    const newGroup = {
+      id: Date.now().toString(),
+      roomId: "room_" + Math.random().toString(36).slice(2, 10),
+      name: groupName,
+      message: groupDescription || '',
+      time: new Date().toLocaleString(),
+      avatar: groupDP || groupName.charAt(0).toUpperCase(),
+      isOnline: false,
+      isRead: false,
+      isGroup: true,
+      members: [],
+      groupAdmin: '',
+      createdAt: new Date().toISOString(),
+    };
+    dispatch(setUserList([newGroup, ...users]));
+  };
+
   const handleSearchChange = (text: string) => {
     dispatch(setSearch(text));
   };
@@ -45,5 +73,7 @@ export const useUserList = () => {
     filteredUsers,
     handleSearchChange,
     handleOpenChat,
+    handleCreateGroup,
+    addGroup,
   };
 };
