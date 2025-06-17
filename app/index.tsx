@@ -7,7 +7,7 @@ export default function SplashScreen() {
   useEffect(() => {
       const isAuthenticated = checkAuth();
     setTimeout(() => {
-      router.replace(isAuthenticated ? "/home/UserList/userList" : "/login");
+      router.replace(isAuthenticated ? "/home/UserScreen/groupList" : "/login");
     }, 500); // simulate splash
   }, []);
 
