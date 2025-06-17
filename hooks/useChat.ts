@@ -1,5 +1,5 @@
 import { addMessage, loadMessages, setActiveUser } from '@/Redux/chatReducer';
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 
 export const useChat = () => {
@@ -20,6 +20,35 @@ export const useChat = () => {
     dispatch(loadMessages(dummyMessages));
   }, [dispatch]);
 
+  // Join room when activeUser changes, only once per unique roomId
+  const lastJoinedRoomId = useRef<string | null>(null);
+  const joinRoomCalled = useRef(false);
+  useEffect(() => {
+    const joinRoom = async () => {
+      if (
+        activeUser &&
+        activeUser.roomId &&
+        activeUser.roomId !== lastJoinedRoomId.current
+      ) {
+        try {
+          if (!joinRoomCalled.current) {
+            joinRoomCalled.current = true;
+            console.log(`Joining room: ${activeUser.roomId}`);
+            lastJoinedRoomId.current = activeUser.roomId;
+            // Place your join logic here (e.g., API call)
+          }
+        } catch {
+          // Optionally: handle error
+        }
+      }
+    };
+    joinRoom();
+    // Reset joinRoomCalled if activeUser changes to null or a different room
+    if (!activeUser || activeUser.roomId !== lastJoinedRoomId.current) {
+      joinRoomCalled.current = false;
+    }
+  }, [activeUser]);
+
   const sendMessage = () => {
     if (!text.trim()) return;
 
@@ -35,7 +64,7 @@ export const useChat = () => {
       sender: 'me',
       time: now,
     };
-
+    
     dispatch(addMessage(newMessage));
     setText('');
 
