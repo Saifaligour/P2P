@@ -3,6 +3,7 @@ import { addGroupDetails } from '@/backend/Api';
 import { useRouter } from "expo-router";
 import { useMemo } from "react";
 import { useDispatch, useSelector } from "react-redux";
+import { useChat } from './useChat';
 
 export interface User {
   id: string;
@@ -31,6 +32,7 @@ interface RootState {
 export const useUserList = () => {
   const router = useRouter();
   const dispatch = useDispatch();
+  const { setActiveUserInChat } = useChat();
 
   const search = useSelector((state: RootState) => state.userList.search);
   const users = useSelector((state: RootState) => state.userList.users);
@@ -41,6 +43,7 @@ export const useUserList = () => {
   }, [search, users]);
 
   const handleOpenChat = (user: User) => {
+    setActiveUserInChat(user); // Use useChat hook to set active user
     router.push("/home/chat");
   };
   

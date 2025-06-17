@@ -1,8 +1,10 @@
 const LOAD_MESSAGES = 'LOAD_MESSAGES';
 const ADD_MESSAGE = 'ADD_MESSAGE';
+const SET_ACTIVE_USER = 'SET_ACTIVE_USER';
 
 const initialState = {
   messages: [],
+  activeUser: null,
 };
 
 export const chatReducer = (state = initialState, action) => {
@@ -17,6 +19,12 @@ export const chatReducer = (state = initialState, action) => {
       return {
         ...state,
         messages: [action.payload, ...state.messages],
+      };
+
+    case SET_ACTIVE_USER:
+      return {
+        ...state,
+        activeUser: action.payload,
       };
 
     default:
@@ -34,4 +42,9 @@ export const loadMessages = (messages) => ({
 export const addMessage = (message) => ({
   type: ADD_MESSAGE,
   payload: message,
+});
+
+export const setActiveUser = (user) => ({
+  type: SET_ACTIVE_USER,
+  payload: user,
 });

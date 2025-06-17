@@ -1,3 +1,4 @@
+import { BackButton } from '@/components/ui/BackButton';
 import { useChat } from '@/hooks/useChat';
 import { styles } from '@/style/ChatStyles';
 import { Ionicons } from '@expo/vector-icons';
@@ -15,30 +16,31 @@ import {
 } from 'react-native';
 
 // Header Component
-const Header = memo(() => (
-  <View style={styles.header}>
-    <TouchableOpacity style={styles.backButton}>
-      <Ionicons name="arrow-back" size={24} color="#333" />
-    </TouchableOpacity>
-
-    <View style={styles.headerInfo}>
-      <Text style={styles.roomName}>Saif</Text>
-      <Text style={styles.memberCount}>2 members</Text>
+const Header = memo(() => {
+  const { activeUser } = useChat();
+  return (
+    <View style={styles.header}>
+      <BackButton style={styles.backButton} color="#333" size={24} />
+      <View style={styles.headerInfo}>
+        <Text style={styles.roomName}>{activeUser ? activeUser.name : 'Chat'}</Text>
+        {activeUser && activeUser.isGroup && (
+          <Text style={styles.memberCount}>{activeUser.members?.length || 1} members</Text>
+        )}
+      </View>
+      <View style={styles.headerIcons}>
+        <TouchableOpacity style={styles.headerIcon}>
+          <Ionicons name="videocam" size={24} color="#333" />
+        </TouchableOpacity>
+        <TouchableOpacity style={styles.headerIcon}>
+          <Ionicons name="call" size={22} color="#333" />
+        </TouchableOpacity>
+        <TouchableOpacity style={styles.headerIcon}>
+          <Ionicons name="ellipsis-vertical" size={22} color="#333" />
+        </TouchableOpacity>
+      </View>
     </View>
-
-    <View style={styles.headerIcons}>
-      <TouchableOpacity style={styles.headerIcon}>
-        <Ionicons name="videocam" size={24} color="#333" />
-      </TouchableOpacity>
-      <TouchableOpacity style={styles.headerIcon}>
-        <Ionicons name="call" size={22} color="#333" />
-      </TouchableOpacity>
-      <TouchableOpacity style={styles.headerIcon}>
-        <Ionicons name="ellipsis-vertical" size={22} color="#333" />
-      </TouchableOpacity>
-    </View>
-  </View>
-));
+  );
+});
 Header.displayName = "Header";
 
 // Message Component (individual message render)

@@ -1,10 +1,11 @@
-import { addMessage, loadMessages } from '@/Redux/chatReducer';
+import { addMessage, loadMessages, setActiveUser } from '@/Redux/chatReducer';
 import { useEffect, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 
 export const useChat = () => {
   const dispatch = useDispatch();
   const messages = useSelector((state: any) => state.chat.messages);
+  const activeUser = useSelector((state: any) => state.chat.activeUser);
   const [text, setText] = useState('');
 
   // Simulated fetch of messages on mount
@@ -17,7 +18,7 @@ export const useChat = () => {
     ];
 
     dispatch(loadMessages(dummyMessages));
-  }, []);
+  }, [dispatch]);
 
   const sendMessage = () => {
     if (!text.trim()) return;
@@ -55,11 +56,16 @@ export const useChat = () => {
     }, 600);
   };
 
+  const setActiveUserInChat = (user: any) => {
+    dispatch(setActiveUser(user));
+  };
 
   return {
     messages,
     text,
     setText,
     sendMessage,
+    activeUser, // expose activeUser for chat logic
+    setActiveUserInChat, // expose setter
   };
 };
