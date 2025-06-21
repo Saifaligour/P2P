@@ -2,10 +2,9 @@
 /** @typedef {import('pear-interface')} */
 
 /* global Pear */
-import b4a from 'b4a'; // Module for buffer-to-string and vice-versa conversions 
 import Hyperswarm from 'hyperswarm'; // Module for P2P networking and connecting peers
 // import { decryptWithPrivateKey, encryptWithPublicKey } from './crypto';
-import { JOIN_ROOM, RECEIVE_MESSAGE, SEND_MESSAGE } from './rpc-commands.mjs';
+import { JOIN_ROOM, RECEIVE_MESSAGE, RPC_LOG, SEND_MESSAGE } from './rpc-commands.mjs';
 // const { teardown, updates } = Pear    // Functions for cleanup and updates
 import { createHash } from 'bare-crypto';
 import RPCManager from './IPC.mjs';
@@ -21,47 +20,38 @@ const RPC = RPCManager.getInstance(IPC)
 // This is optional but helpful during production
 // updates(() => Pear.reload())
 
-// When there's a new connection, listen for new messages, and add them to the UI
 swarm.on('connection', (peer) => {
-  // name incoming peers after first 6 chars of its public key as hex
   peer.on('data', message => {
-    // const m = decryptData(b4a.toString(message, 'utf8'))
     // const base64= b4a.toString(message, 'utf8')
     // const m = decryptWithPrivateKey(base64)
+    print('Received message from peer:', message)
     readMessage(message)
-    // print(b4a.toString(message, 'utf8'));
 
   })
   peer.on('error', e => print(`Connection error: ${e}`))
 })
 
 RPC.onRequest(RECEIVE_MESSAGE, (data) => {
-  print('[Worklet] Received chat message:', data);
-  writeMessage(JSON.stringify(data));
+  print(`Command :${RECEIVE_MESSAGE} P2P sending message to peer:`, data);
+  writeMessage(data);
 });
 
 RPC.onRequest(JOIN_ROOM, (data) => {
-  print('[Worklet] Joining chat room:', data.roomId);
+  print(`Command :${JOIN_ROOM} P2P Joining chat room:`, data.roomId);
   joinChatRoom(data.roomId);
 });
 
 
-// When there's updates to the swarm, update the peers count
 swarm.on('update', () => {
-  print(`Peers: ${swarm.peers.length} connections`)
+  // print(`Peers: ${swarm.peers.length} connections`)
 })
 
 
 async function joinChatRoom(roomId) {
-  // Join a chat room by its ID
-  print('[Worklet] Joining chat room:', roomId)
-
   // Unannounce the previous topic if any
   // if (swarm.discovery) {
   //   swarm.discovery.leave()
   // }
-
-  // Create a new topic buffer from the room ID
   const topicBuffer = createHash('sha256').update(roomId).digest()
   const discovery = swarm.join(topicBuffer, { client: true, server: true })
   await discovery.flushed()
@@ -70,9 +60,8 @@ async function joinChatRoom(roomId) {
 
 function writeMessage(message) {
 
-  const encoded = b4a.from(message); // or b4a.from(message)
   const peers = [...swarm.connections]
-  for (const peer of peers) peer.write(encoded)
+  for (const peer of peers) peer.write(message)
 }
 
 function readMessage(message) {
@@ -80,9 +69,9 @@ function readMessage(message) {
 }
 
 function print(...args) {
-  // Use BareKit.log if available, else fallback to nothing
   if (typeof BareKit !== 'undefined' && typeof BareKit.log === 'function') {
     BareKit.log(...args);
   }
+  RPC.log(RPC_LOG, ...args);
 }
 

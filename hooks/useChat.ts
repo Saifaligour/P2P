@@ -1,4 +1,4 @@
-import { JOIN_ROOM, RECEIVE_MESSAGE, SEND_MESSAGE } from '@/backend/rpc-commands.mjs';
+import { JOIN_ROOM, RECEIVE_MESSAGE, RPC_LOG, SEND_MESSAGE } from '@/backend/rpc-commands.mjs';
 import { rpcService } from '@/hooks/RPC';
 import { addMessage, loadMessages, setActiveUser } from '@/Redux/chatReducer';
 import { useEffect, useState } from 'react';
@@ -26,6 +26,11 @@ export const useChat = () => {
         } else {
           dispatch(addMessage(data));
         }
+      });
+
+      rpcService.subscribe(RPC_LOG, (data: any) => {
+        console.log(data);
+        
       });
       rpcService.send(JOIN_ROOM, activeUser);
     }

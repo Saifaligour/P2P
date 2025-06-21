@@ -92,6 +92,15 @@ class RPCManager {
         req.send(payload);
     }
 
+    log(command, ...args) {
+        this._initIfNeeded();
+        if (!this.rpc) throw new Error('RPC not initialized.');
+
+        // const payload = args.map(arg => (typeof arg === 'string' ? arg : JSON.stringify(arg)));
+        const req = this.rpc.request(command);
+        req.send(JSON.stringify(args));
+    }
+
     stop() {
         this.rpc = null;
         this.subscriptions.clear();
