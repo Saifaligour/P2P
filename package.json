@@ -5,12 +5,15 @@
   "scripts": {
     "start": "expo start",
     "reset-project": "node ./scripts/reset-project.js",
-    "android": "expo start --android",
-    "ios": "expo start --ios",
+    "android": "expo run:android",
+    "ios": "expo run:ios",
     "ANDROID": "expo run:android",
     "IOS": "expo run:ios",
     "web": "expo start --web",
-    "lint": "expo lint"
+    "lint": "expo lint",
+    "bundle": "npx bare-pack --target ios --target android  --linked --out hooks/app.bundle.mjs backend/app.mjs",
+    "clean": "expo prebuild --clean",
+    "doctor": "npx expo-doctor"
   },
   "dependencies": {
     "@expo/vector-icons": "^14.1.0",
@@ -19,6 +22,7 @@
     "@react-navigation/native": "^7.1.6",
     "autopass": "^2.2.0",
     "b4a": "^1.6.7",
+    "bare-crypto": "^1.4.5",
     "bare-fs": "^4.1.5",
     "bare-rpc": "^0.2.5",
     "corestore": "^7.4.5",
@@ -31,6 +35,7 @@
     "expo-font": "~13.3.1",
     "expo-haptics": "~14.1.4",
     "expo-image": "~2.2.0",
+    "expo-image-picker": "^16.1.4",
     "expo-linking": "~7.1.5",
     "expo-router": "~5.0.7",
     "expo-splash-screen": "~0.30.9",
@@ -48,7 +53,8 @@
     "react-native-screens": "~4.11.1",
     "react-native-web": "~0.20.0",
     "react-native-webview": "13.13.5",
-    "react-redux": "^9.2.0"
+    "react-redux": "^9.2.0",
+    "redux": "^5.0.1"
   },
   "devDependencies": {
     "@babel/core": "^7.25.2",

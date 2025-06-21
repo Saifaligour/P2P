@@ -21,7 +21,7 @@ const Header = memo(({ activeUser }: { activeUser: any }) => {
     <View style={styles.header}>
       <BackButton style={styles.backButton} color="#333" size={24} />
       <View style={styles.headerInfo}>
-        <Text style={styles.roomName}>{activeUser ? activeUser.name : 'Chat'}</Text>
+        <Text style={styles.roomName}>{activeUser ? activeUser.roomId : 'Chat'}</Text>
         {activeUser && activeUser.isGroup && (
           <Text style={styles.memberCount}>{activeUser.members?.length || 1} members</Text>
         )}

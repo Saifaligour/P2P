@@ -20,7 +20,7 @@ export default function RootLayout() {
   return (
     <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
       <Stack screenOptions={{ headerShown: false }}>
-        <Stack.Screen name="chat/index" />
+        {/* <Stack.Screen name="chat" /> */}
       </Stack>
       <StatusBar style="auto" />
     </ThemeProvider>
