@@ -3,27 +3,16 @@
 
 /* global Pear */
 import b4a from 'b4a'; // Module for buffer-to-string and vice-versa conversions 
-import RPC from 'bare-rpc';
 import Hyperswarm from 'hyperswarm'; // Module for P2P networking and connecting peers
 // import { decryptWithPrivateKey, encryptWithPublicKey } from './crypto';
-import { RPC_CUSTOM_INPUT, RPC_JOIN_ROOM, RPC_MESSAGE } from './rpc-commands.mjs';
+import { JOIN_ROOM, RECEIVE_MESSAGE, SEND_MESSAGE } from './rpc-commands.mjs';
 // const { teardown, updates } = Pear    // Functions for cleanup and updates
 import { createHash } from 'bare-crypto';
+import RPCManager from './IPC.mjs';
+
 const swarm = new Hyperswarm()
 const { IPC } = BareKit
-
-
-try {
-  if (typeof BareKit === 'undefined') {
-    throw new Error('❌ BareKit is not defined in worklet');
-  } else if (typeof BareKit.log !== 'function') {
-    throw new Error('❌ BareKit.log is not available');
-  } else {
-    BareKit.log('✅ BareKit and BareKit.log are available');
-  }
-} catch (e) {
-  console.log('[Worklet Error]', e.message);
-}
+const RPC = RPCManager.getInstance(IPC)
 // Unannounce the public key before exiting the process
 // (This is not a requirement, but it helps avoid DHT pollution)
 // teardown(() => swarm.destroy())
@@ -39,34 +28,21 @@ swarm.on('connection', (peer) => {
     // const m = decryptData(b4a.toString(message, 'utf8'))
     // const base64= b4a.toString(message, 'utf8')
     // const m = decryptWithPrivateKey(base64)
-    readMessage(message, RPC_MESSAGE)
+    readMessage(message)
     // print(b4a.toString(message, 'utf8'));
 
   })
   peer.on('error', e => print(`Connection error: ${e}`))
 })
 
-const rpc = new RPC(IPC, (req, err) => {
-  if (err) {
-    console.error('[Worklet] RPC Error:', err);
-  } else {
-    let data = parseData(req.data);
-    print('[Worklet] RPC Request received:', req.command);
-    if (req.command === RPC_CUSTOM_INPUT) {
-      // Handle incoming chat message
-      print('[Worklet] Received chat message:', data);
-      data.id = Math.random().toString(36).substring(2, 15);
-      data.sender = 'other';
-      // Echo the message back to the client as a chat message
-      writeMessage(JSON.stringify(data));
-    }
-    if (req.command === RPC_JOIN_ROOM) {
-      // Handle joining a chat room
-      const roomId = data.roomId;
-      print('[Worklet] Joining chat room:', roomId)
-      joinChatRoom(roomId)
-    }
-  }
+RPC.onRequest(RECEIVE_MESSAGE, (data) => {
+  print('[Worklet] Received chat message:', data);
+  writeMessage(JSON.stringify(data));
+});
+
+RPC.onRequest(JOIN_ROOM, (data) => {
+  print('[Worklet] Joining chat room:', data.roomId);
+  joinChatRoom(data.roomId);
 });
 
 
@@ -99,10 +75,8 @@ function writeMessage(message) {
   for (const peer of peers) peer.write(encoded)
 }
 
-function readMessage(message,command) {
-  //  const payload = JSON.stringify(data);
-  const messageRequest = rpc.request(command);
-  messageRequest.send(message);
+function readMessage(message) {
+ RPC.send(SEND_MESSAGE,message)
 }
 
 function print(...args) {
@@ -112,14 +86,3 @@ function print(...args) {
   }
 }
 
-const parseData = (data) => {
-  // Accept both Buffer and Uint8Array
-  if (b4a.isBuffer(data) || data instanceof Uint8Array) {
-    try {
-      return JSON.parse(b4a.toString(data, 'utf-8'));
-    } catch (e) {
-      print('Failed to parse buffer as JSON:', e);
-    }
-  }
-  return null
-}

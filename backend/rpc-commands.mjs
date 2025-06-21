@@ -1,4 +1,8 @@
-export const RPC_MESSAGE = 1;
-export const RPC_RESET = 0;
-export const RPC_CUSTOM_INPUT = 2; // ← For messages sent from RN to Worklet
-export const RPC_JOIN_ROOM = 3; // ← For messages sent from Worklet to R
+export const SEND_MESSAGE = 1;
+export const RECEIVE_MESSAGE = 1;
+export const SEND_FILE = 2;
+export const RECEIVE_FILE = 2;
+export const SEND_NOTIFICATION = 3;
+export const RECEIVE_NOTIFICATION = 3;
+export const JOIN_ROOM = 4;
+export const LEAVE_ROOM = 4;

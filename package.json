@@ -7,12 +7,13 @@
     "reset-project": "node ./scripts/reset-project.js",
     "android": "expo run:android",
     "ios": "expo run:ios",
-    "ANDROID": "expo run:android",
-    "IOS": "expo run:ios",
+    "ANDROID": "expo start --android",
+    "IOS": "expo start --ios",
     "web": "expo start --web",
     "lint": "expo lint",
     "bundle": "npx bare-pack --target ios --target android  --linked --out hooks/app.bundle.mjs backend/app.mjs",
     "clean": "expo prebuild --clean",
+    "prebuild": "expo prebuild",
     "doctor": "npx expo-doctor"
   },
   "dependencies": {

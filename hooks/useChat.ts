@@ -1,5 +1,5 @@
-import { RPC_CUSTOM_INPUT, RPC_JOIN_ROOM, RPC_MESSAGE } from '@/backend/rpc-commands.mjs';
-import { getRPC, startRPCWorklet, stopRPCWorklet } from '@/hooks/RPC';
+import { JOIN_ROOM, RECEIVE_MESSAGE, SEND_MESSAGE } from '@/backend/rpc-commands.mjs';
+import { rpcService } from '@/hooks/RPC';
 import { addMessage, loadMessages, setActiveUser } from '@/Redux/chatReducer';
 import { useEffect, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
@@ -10,32 +10,31 @@ export const useChat = () => {
   const activeUser = useSelector((state: any) => state.chat.activeUser);
   const [text, setText] = useState('');
   // Setup and teardown RPC for chat room
-  useEffect(() => {
-    const setupRPC = async () => {
-      if (activeUser && activeUser.roomId ) {
-        startRPCWorklet((command:number,data: any) => {
-          console.log('Received message:', data);
-            
-          if (command === RPC_MESSAGE || command === RPC_JOIN_ROOM) {
-            try {
-    
-              if (Array.isArray(data)) {
-                dispatch(loadMessages(data));
-              } else {
-                dispatch(addMessage(data));
-              }
-            } catch {}
-          }
-        }, [activeUser.roomId]);
-      }
-    };
-    setupRPC();
-      const rpc = getRPC();
-      const req = rpc.request(RPC_JOIN_ROOM);
-      req.send(JSON.stringify(activeUser));
-    return () => {
-      stopRPCWorklet();
 
+  const loadData = async () => {
+    if (activeUser && activeUser.roomId) {
+      rpcService.subscribe(RECEIVE_MESSAGE, (data: any) => {
+        if (Array.isArray(data)) {
+          dispatch(loadMessages(data));
+        } else {
+          dispatch(addMessage(data));
+        }
+      });
+      rpcService.subscribe(JOIN_ROOM, (data: any) => {
+        if (Array.isArray(data)) {
+          dispatch(loadMessages(data));
+        } else {
+          dispatch(addMessage(data));
+        }
+      });
+      rpcService.send(JOIN_ROOM, activeUser);
+    }
+  };
+
+  useEffect(() => {
+    loadData();
+    return () => {
+      rpcService.stop();
     };
   }, [activeUser, dispatch]);
 
@@ -54,9 +53,7 @@ export const useChat = () => {
       roomId: activeUser?.roomId,
     };
     try {
-      const rpc = getRPC();
-      const req = rpc.request(RPC_CUSTOM_INPUT);
-      req.send(JSON.stringify(newMessage));
+      rpcService.send(SEND_MESSAGE, newMessage);
     } catch {
       console.error('Failed to send message:');
     }
