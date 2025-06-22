@@ -16,7 +16,7 @@ class RPCManager {
   private subscriptions = new Map<number, Set<EventHandler>>();
   private requestHandlers = new Map<number, RequestHandler>();
 
-  private constructor() {}
+  private constructor() { }
 
   public static getInstance(): RPCManager {
     if (!RPCManager.instance) {
@@ -35,29 +35,16 @@ class RPCManager {
     this.rpc = new RPC(IPC as Duplex, async (req) => {
       const { command, data } = req;
 
-      let parsed;
-      try {
-        if (data instanceof Uint8Array) {
-          parsed = JSON.parse(new TextDecoder().decode(data));
-        } else if (typeof data === 'string') {
-          parsed = JSON.parse(data);
-        } else {
-          parsed = data;
-        }
-      } catch (err) {
-        console.error('RPC message parse error:', err);
-        return b4a.from(JSON.stringify({ error: 'Invalid data' }));
-      }
-
+      let payload = this.decode(data)
       // 1. Handle request/response if handler is registered
       const handler = this.requestHandlers.get(command);
       if (handler) {
         try {
-          const result = await handler(parsed);
-          return b4a.from(JSON.stringify(result));
+          const result = await handler(payload);
+          return this.encode(result);
         } catch (err: any) {
           console.error(`Handler error for command ${command}:`, err);
-          return b4a.from(JSON.stringify({ error: err.message }));
+          return this.encode({ error: err.message });
         }
       }
 
@@ -66,7 +53,7 @@ class RPCManager {
       if (subs) {
         for (const fn of subs) {
           try {
-            fn(parsed);
+            fn(payload);
           } catch (e) {
             console.error(`Subscriber error for command ${command}`, e);
           }
@@ -101,7 +88,7 @@ class RPCManager {
     this.initIfNeeded();
     this.requestHandlers.set(command, handler);
   }
-  
+
   public offRequest(command: number) {
     this.initIfNeeded();
     this.requestHandlers.delete(command);
@@ -111,9 +98,8 @@ class RPCManager {
     this.initIfNeeded();
     if (!this.rpc) throw new Error('RPC not initialized.');
 
-    const payload = typeof data === 'string' ? data : JSON.stringify(data);
     const req = this.rpc.request(command);
-    req.send(payload);
+    req.send(this.encode(data));
   }
 
   public stop() {
@@ -128,7 +114,25 @@ class RPCManager {
 
     this.initialized = false;
   }
+  decode = (data: any) => {
+    if (b4a.isBuffer(data) || data instanceof Uint8Array) {
+      return JSON.parse(b4a.toString(data, 'utf-8'))
+    }
+    else if (typeof data === 'string') {
+      return JSON.parse(data)
+    }
+  }
+  encode = (data: any) => {
+    if (typeof data === 'string') {
+      return data;
+    } else {
+      return JSON.stringify(data);
+    }
+  }
 }
+
+
+
 
 export default RPCManager;
 

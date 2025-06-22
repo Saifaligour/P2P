@@ -31,20 +31,31 @@ swarm.on('connection', (peer) => {
   peer.on('error', e => print(`Connection error: ${e}`))
 })
 
+swarm.on('update', () => {
+  print(`Peers: connections saif ${swarm.connections.size}`)
+})
+
+swarm.on('network-update', (data) => {
+  print('network-update', data)
+})
+swarm.on('network-change', (data) => {
+  print('network-change', data)
+
+})
+swarm.on('persistent', (data) => {
+  print('persistent', data)
+
+})
+
 RPC.onRequest(RECEIVE_MESSAGE, (data) => {
   print(`Command :${RECEIVE_MESSAGE} P2P sending message to peer:`, data);
   writeMessage(data);
 });
 
-RPC.onRequest(JOIN_ROOM, (data) => {
-  print(`Command :${JOIN_ROOM} P2P Joining chat room:`, data.roomId);
-  joinChatRoom(data.roomId);
+RPC.onRequest(JOIN_ROOM, (roomId) => {
+  print(`Command :${JOIN_ROOM} P2P Joining chat room:`, roomId);
+  joinChatRoom(roomId);
 });
-
-
-swarm.on('update', () => {
-  // print(`Peers: ${swarm.peers.length} connections`)
-})
 
 
 async function joinChatRoom(roomId) {
@@ -65,13 +76,14 @@ function writeMessage(message) {
 }
 
 function readMessage(message) {
- RPC.send(SEND_MESSAGE,message)
+  RPC.send(SEND_MESSAGE, message)
 }
 
 function print(...args) {
   if (typeof BareKit !== 'undefined' && typeof BareKit.log === 'function') {
     BareKit.log(...args);
   }
-  RPC.log(RPC_LOG, ...args);
+  const fileName = import.meta.url;
+  RPC.log(RPC_LOG, fileName, ...args);
 }
 

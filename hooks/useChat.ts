@@ -11,9 +11,11 @@ export const useChat = () => {
   const [text, setText] = useState('');
   // Setup and teardown RPC for chat room
 
-  const loadData = async () => {
+  useEffect(() => {
+
     if (activeUser && activeUser.roomId) {
       rpcService.subscribe(RECEIVE_MESSAGE, (data: any) => {
+        console.log('data recveid from peer', data)
         if (Array.isArray(data)) {
           dispatch(loadMessages(data));
         } else {
@@ -21,6 +23,7 @@ export const useChat = () => {
         }
       });
       rpcService.subscribe(JOIN_ROOM, (data: any) => {
+        console.log('recveid new log')
         if (Array.isArray(data)) {
           dispatch(loadMessages(data));
         } else {
@@ -30,14 +33,10 @@ export const useChat = () => {
 
       rpcService.subscribe(RPC_LOG, (data: any) => {
         console.log(data);
-        
-      });
-      rpcService.send(JOIN_ROOM, activeUser);
-    }
-  };
 
-  useEffect(() => {
-    loadData();
+      });
+      rpcService.send(JOIN_ROOM, activeUser.roomId);
+    }
     return () => {
       rpcService.stop();
     };
