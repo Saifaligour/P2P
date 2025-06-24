@@ -43,7 +43,7 @@ const Header = memo(({ activeUser }: { activeUser: any }) => {
 Header.displayName = "Header";
 
 // Message Component (individual message render)
-const Message = memo(({ item }:any) => {
+const Message = memo(({ item }: any) => {
   if (item.type === 'system') {
     return (
       <View style={styles.systemMessageContainer}>
@@ -54,7 +54,7 @@ const Message = memo(({ item }:any) => {
   }
   if (item.type === 'date') {
     return (
-     <View style={styles.dateSeparator}>
+      <View style={styles.dateSeparator}>
         <Text style={styles.dateText}>{item.text}</Text>
       </View>
     );
@@ -82,7 +82,7 @@ const Message = memo(({ item }:any) => {
 Message.displayName = "Message";
 
 // Message List Component
-const MessageList = memo(({ messages, flatListRef, renderMessage }:any) => (
+const MessageList = memo(({ messages, flatListRef, renderMessage }: any) => (
   <FlatList
     ref={flatListRef}
     data={messages}
@@ -97,36 +97,51 @@ const MessageList = memo(({ messages, flatListRef, renderMessage }:any) => (
 MessageList.displayName = "MessageList";
 
 // Input Bar Component
-const InputBar = memo(({ text, setText, sendMessage }:any) => (
-  <View style={styles.inputWrapper}>
-    <TouchableOpacity style={styles.iconButton}>
-      <Ionicons name="add" size={24} color="#00BFFF" />
-    </TouchableOpacity>
+const InputBar = memo(({ text, setText, sendMessage }: any) => {
+  // Handler for Enter key (web/desktop)
+  const handleKeyPress = (e: any) => {
+    if (e.nativeEvent.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault?.();
+      setTimeout(() => {
+        sendMessage();
+      }, 0);
+    }
+  };
 
-    <TextInput
-      placeholder="Type a message"
-      placeholderTextColor="#ccc"
-      value={text}
-      onChangeText={setText}
-      style={styles.textInput}
-      multiline
-    />
-
-    <TouchableOpacity style={styles.iconButton}>
-      <Ionicons name="happy-outline" size={24} color="#00BFFF" />
-    </TouchableOpacity>
-
-    {text.trim() ? (
-      <TouchableOpacity style={styles.iconButton} onPress={sendMessage}>
-        <Ionicons name="send" size={22} color="#00BFFF" />
-      </TouchableOpacity>
-    ) : (
+  return (
+    <View style={styles.inputWrapper}>
       <TouchableOpacity style={styles.iconButton}>
-        <Ionicons name="mic" size={24} color="#00BFFF" />
+        <Ionicons name="add" size={24} color="#00BFFF" />
       </TouchableOpacity>
-    )}
-  </View>
-));
+
+      <TextInput
+        placeholder="Type a message"
+        placeholderTextColor="#ccc"
+        value={text}
+        onChangeText={setText}
+        style={styles.textInput}
+        multiline
+        onKeyPress={handleKeyPress}
+        onSubmitEditing={sendMessage}
+        blurOnSubmit={false}
+      />
+
+      <TouchableOpacity style={styles.iconButton}>
+        <Ionicons name="happy-outline" size={24} color="#00BFFF" />
+      </TouchableOpacity>
+
+      {text.trim() ? (
+        <TouchableOpacity style={styles.iconButton} onPress={sendMessage}>
+          <Ionicons name="send" size={22} color="#00BFFF" />
+        </TouchableOpacity>
+      ) : (
+        <TouchableOpacity style={styles.iconButton}>
+          <Ionicons name="mic" size={24} color="#00BFFF" />
+        </TouchableOpacity>
+      )}
+    </View>
+  );
+});
 InputBar.displayName = "InputBar";
 
 
@@ -138,7 +153,7 @@ const ChatScreen = () => {
     <SafeAreaView style={styles.container}>
       <StatusBar barStyle="dark-content" backgroundColor="#f0f2f5" />
       <Header activeUser={activeUser} />
-  
+
       <KeyboardAvoidingView
         style={{ flex: 1 }}
         behavior={Platform.OS === 'ios' ? 'padding' : 'padding'}

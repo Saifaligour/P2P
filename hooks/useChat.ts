@@ -1,4 +1,4 @@
-import { JOIN_ROOM, RECEIVE_MESSAGE, RPC_LOG, SEND_MESSAGE } from '@/backend/rpc-commands.mjs';
+import { JOIN_ROOM, LEAVE_ROOM, RECEIVE_MESSAGE, RPC_LOG, SEND_MESSAGE } from '@/backend/rpc-commands.mjs';
 import { rpcService } from '@/hooks/RPC';
 import { addMessage, loadMessages, setActiveUser } from '@/Redux/chatReducer';
 import { useEffect, useState } from 'react';
@@ -22,14 +22,6 @@ export const useChat = () => {
           dispatch(addMessage(data));
         }
       });
-      rpcService.subscribe(JOIN_ROOM, (data: any) => {
-        console.log('recveid new log')
-        if (Array.isArray(data)) {
-          dispatch(loadMessages(data));
-        } else {
-          dispatch(addMessage(data));
-        }
-      });
 
       rpcService.subscribe(RPC_LOG, (data: any) => {
         console.log(data);
@@ -38,6 +30,7 @@ export const useChat = () => {
       rpcService.send(JOIN_ROOM, activeUser.roomId);
     }
     return () => {
+      rpcService.send(LEAVE_ROOM, activeUser.roomId)
       rpcService.stop();
     };
   }, [activeUser, dispatch]);
@@ -52,16 +45,17 @@ export const useChat = () => {
       id: Date.now().toString(),
       type: 'message',
       text,
-      sender: 'me',
+      sender: 'other',
       time: now,
       roomId: activeUser?.roomId,
     };
     try {
+
       rpcService.send(SEND_MESSAGE, newMessage);
     } catch {
       console.error('Failed to send message:');
     }
-
+    newMessage.sender = 'me'
     dispatch(addMessage(newMessage));
     setText('');
   };

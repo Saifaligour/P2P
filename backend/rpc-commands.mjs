@@ -5,5 +5,5 @@ export const RECEIVE_FILE = 2;
 export const SEND_NOTIFICATION = 3;
 export const RECEIVE_NOTIFICATION = 3;
 export const JOIN_ROOM = 4;
-export const LEAVE_ROOM = 4;
-export const RPC_LOG = 5;
+export const LEAVE_ROOM = 5;
+export const RPC_LOG = 6;

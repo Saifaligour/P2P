@@ -35,7 +35,7 @@ class RPCManager {
                     const result = await handler(data);
                     return this.encode(result);
                 } catch (err) {
-                    this.log(RPC_LOG, this.fileName, `Handler error for command ${command}:`, err);
+                    this.log(RPC_LOG, this.fileName, `Handler error for command ${command}:`, err.message);
                     return this.encode({ error: err.message });
                 }
             }
@@ -108,22 +108,25 @@ class RPCManager {
         this.initialized = false;
     }
 
-    decode = (data) => {
+    decode = (data, format = 'utf-8') => {
         if (b4a.isBuffer(data) || data instanceof Uint8Array) {
-            return b4a.toString(data, 'utf-8')
+            return b4a.toString(data, format)
         }
         else if (typeof data === 'string') {
             return data;
         }
+        else if (data instanceof Object) {
+            return JSON.stringify(data)
+        }
     }
 
-    encode = (data) => {
+    encode = (data, format = 'utf-8') => {
         if (typeof data === 'string') {
-            return b4a.from(data, 'utf-8');
+            return b4a.from(data, format);
         } else if (data instanceof Uint8Array || b4a.isBuffer(data)) {
             return data;
         } else {
-            return b4a.from(JSON.stringify(data), 'utf-8');
+            return b4a.from(JSON.stringify(data), format);
         }
     }
 }
