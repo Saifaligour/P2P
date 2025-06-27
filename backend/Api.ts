@@ -16,9 +16,9 @@ export const addGroupDetails = async (groupData: any) => {
   }
 };
 
-export const fetchGroupDetails = async (roomId: string) => {
+export const fetchGroupDetails = async (groupId: string) => {
   try {
-    const response = await fetch(`${BASE_URL}/${roomId}`);
+    const response = await fetch(`${BASE_URL}/${groupId}`);
     if (!response.ok) throw new Error('Failed to fetch group');
     return await response.json();
   } catch (error) {

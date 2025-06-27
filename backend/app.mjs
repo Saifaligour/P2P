@@ -4,20 +4,28 @@
 /* global Pear */
 import Hyperswarm from 'hyperswarm'; // Module for P2P networking and connecting peers
 // import { decryptWithPrivateKey, encryptWithPublicKey } from './crypto';
-import { JOIN_ROOM, LEAVE_ROOM, RECEIVE_MESSAGE, RPC_LOG, SEND_MESSAGE } from './rpc-commands.mjs';
-// const { teardown, updates } = Pear    // Functions for cleanup and updates
 import b4a from 'b4a';
 import { createHash } from 'bare-crypto';
+import Pear from 'bare-process'; // or global `Pear` (if auto-injected)
 import RPCManager from './IPC.mjs';
-
+import { CREATE_GROUP, FETCH_GROUP_DETAILS, JOIN_GROUP, LEAVE_GROUP, READ_MESSAGE_FROM_STORE, RECEIVE_MESSAGE, SEND_MESSAGE } from './rpc-commands.mjs';
+import { closeStore, createGroup, getAllGroupDetails, readMessagesFromStore, writeMessagesToStore } from './store.mjs';
 const swarm = new Hyperswarm()
 const { IPC } = BareKit
 const RPC = RPCManager.getInstance(IPC)
 const topicPeersMap = new Map() // topicHex => Set of peers
 
+function print(...args) {
+  RPC.log('[app.js]', ...args);
+}
 // Unannounce the public key before exiting the process
 // (This is not a requirement, but it helps avoid DHT pollution)
-// teardown(() => swarm.destroy())
+
+Pear.on('exit', () => {
+  console.log('pear on exit');
+  swarm.destroy()
+  closeStore()
+})
 
 // Enable automatic reloading for the app
 // This is optional but helpful during production
@@ -42,9 +50,11 @@ swarm.on('connection', (peer, info) => {
     // const base64= b4a.toString(message, 'utf8')
     // const m = decryptWithPrivateKey(base64)
     print('Received message from peer:', message)
-    readMessage(message)
+    sendMessageToUI(message);
+    writeMessagesToStore(message)
 
   })
+
   peer.on('error', e => print(`Connection error: ${e}`))
 })
 
@@ -64,28 +74,47 @@ swarm.on('persistent', (data) => {
 
 })
 
-RPC.onRequest(RECEIVE_MESSAGE, (data) => {
-  print(`Command :${RECEIVE_MESSAGE} P2P sending message to peer:`, data);
-  writeMessage(data);
+RPC.onRequest(FETCH_GROUP_DETAILS, async () => {
+  print(`[Command:FETCH_GROUP_DETAILS] Fetch group details from store`);
+  // Sending back to UI 
+  return getAllGroupDetails()
 });
 
-RPC.onRequest(JOIN_ROOM, (roomId) => {
-  const topicBuffer = createHash('sha256').update(roomId).digest()
-  const topic = RPC.decode(topicBuffer, 'hex')
-  print(`Command :${JOIN_ROOM} P2P Joining chat Room: ${roomId},${topic}`);
-  joinChatRoom(topicBuffer);
+RPC.onRequest(CREATE_GROUP, async (group) => {
+  const groupDetails = JSON.parse(RPC.decode(group));
+  print(`[Command:CREATE_GROUP] Creating new group`);
+  // Sending back to UI
+  return createGroup(groupDetails)
 });
 
-RPC.onRequest(LEAVE_ROOM, (roomId) => {
-  const topicBuffer = createHash('sha256').update(roomId).digest()
-  const topic = RPC.decode(topicBuffer, 'hex')
-  print(`Command :${JOIN_ROOM} P2P Joining chat Room: ${roomId},${topic}`);
+RPC.onRequest(JOIN_GROUP, (groupId) => {
+  const topicBuffer = createHash('sha256').update(groupId).digest()
+  print(`[Command:JOIN_GROUP] Joining chat Room: ${groupId}`);
+  joinGroup(topicBuffer);
+});
+
+RPC.onRequest(LEAVE_GROUP, (groupId) => {
+  const topicBuffer = createHash('sha256').update(groupId).digest()
+  print(`[Command:LEAVE_GROUP] Leaving chat Room: ${groupId}`);
   swarm.leave(topicBuffer)
 });
 
+RPC.onRequest(RECEIVE_MESSAGE, (data) => {
+  print(`[Command:RECEIVE_MESSAGE] sending message to peer and writing in store`);
+  const message = JSON.parse(RPC.decode(data));
+  sendMsgToPeer(message);
+  writeMessagesToStore(message)
+
+});
+
+RPC.onRequest(READ_MESSAGE_FROM_STORE, (data) => {
+  print(`[Command:READ_MESSAGE_FROM_STORE] sending message to peer:`, data);
+  return readMessagesFromStore(data)
+});
 
 
-async function joinChatRoom(topicBuffer) {
+
+async function joinGroup(topicBuffer) {
   // Unannounce the previous topic if any
   // if (swarm.discovery) {
   //   swarm.discovery.leave()
@@ -95,10 +124,10 @@ async function joinChatRoom(topicBuffer) {
 
 }
 
-function writeMessage(message) {
-  const peers = topicPeersMap.get(message.roomId)
+function sendMsgToPeer(message) {
+  const peers = topicPeersMap.get(message[0].groupId)
   if (!peers) {
-    print(`No peers found for topic ${message.roomId}`)
+    print(`No peers found for topic ${message[0].groupId}`)
     return
   }
 
@@ -111,15 +140,9 @@ function writeMessage(message) {
   }
 }
 
-function readMessage(message) {
+function sendMessageToUI(message) {
   RPC.send(SEND_MESSAGE, message)
 }
 
-function print(...args) {
-  if (typeof BareKit !== 'undefined' && typeof BareKit.log === 'function') {
-    BareKit.log(...args);
-  }
-  const fileName = import.meta.url;
-  RPC.log(RPC_LOG, fileName, ...args);
-}
+
 

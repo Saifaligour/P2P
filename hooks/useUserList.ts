@@ -1,20 +1,22 @@
 import { setActiveUser } from "@/Redux/chatReducer";
 import { setSearch, setUserList } from "@/Redux/userListReducer";
 import { addGroupDetails } from '@/backend/Api';
+import { FETCH_GROUP_DETAILS, RPC_LOG } from "@/backend/rpc-commands.mjs";
 import { useRouter } from "expo-router";
-import { useMemo } from "react";
+import { useEffect, useMemo } from "react";
 import { useDispatch, useSelector } from "react-redux";
+import { rpcService } from "./RPC";
 
 export interface User {
   id: string;
-  roomId: string;
+  groupId: string;
   name: string;
   message: string;
   time: string;
   avatar: string;
   isOnline: boolean;
   isRead: boolean;
-  avatarType?:any;
+  avatarType?: any;
   // Group chat fields
   members?: string[]; // user ids
   isGroup?: boolean;
@@ -45,7 +47,7 @@ export const useUserList = () => {
     dispatch(setActiveUser(user));
     router.push("/home/chat");
   };
-  
+
   const handleCreateGroup = () => {
     router.push("/home/UserScreen/createGroup");
   };
@@ -64,6 +66,21 @@ export const useUserList = () => {
   const handleSearchChange = (text: string) => {
     dispatch(setSearch(text));
   };
+
+  const fetchList = async () => {
+    console.log(`Inside fetchList method`);
+    const res = await rpcService.send(FETCH_GROUP_DETAILS, {}).reply();
+    const users = rpcService.decode(res) || []
+    console.log('users', users.length);
+
+    dispatch(setUserList(users));
+
+  }
+  useEffect(() => {
+    rpcService.onRequest(RPC_LOG, (data: any) => console.log(data));
+
+    fetchList()
+  }, [])
 
   return {
     search,

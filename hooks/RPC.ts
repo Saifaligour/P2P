@@ -1,6 +1,7 @@
 import b4a from 'b4a';
 import RPC from 'bare-rpc';
 import type { Duplex } from 'bare-stream';
+import { documentDirectory } from 'expo-file-system';
 import { Worklet } from 'react-native-bare-kit';
 import bundle from './app.bundle.mjs';
 
@@ -29,7 +30,7 @@ class RPCManager {
     if (this.initialized) return;
 
     this.worklet = new Worklet();
-    this.worklet.start('/app.bundle', bundle);
+    this.worklet.start('/app.bundle', bundle, [String(documentDirectory)]);
     const { IPC } = this.worklet;
 
     this.rpc = new RPC(IPC as Duplex, async (req) => {
@@ -41,10 +42,10 @@ class RPCManager {
       if (handler) {
         try {
           const result = await handler(payload);
-          return this.encode(result);
+          req.reply(this.encode(result));
         } catch (err: any) {
           console.error(`Handler error for command ${command}:`, err);
-          return this.encode({ error: err.message });
+          req.reply(this.encode({ error: err.message }));
         }
       }
 
@@ -60,8 +61,7 @@ class RPCManager {
         }
       }
 
-      // No response needed
-      return b4a.from('{}');
+      req.reply(this.encode({ staus: 'ok', 'message': 'data received' }));
     });
 
     this.initialized = true;
@@ -94,12 +94,13 @@ class RPCManager {
     this.requestHandlers.delete(command);
   }
 
-  public send(command: number, data: any): void {
+  public send(command: number, data: any): any {
     this.initIfNeeded();
     if (!this.rpc) throw new Error('RPC not initialized.');
 
     const req = this.rpc.request(command);
     req.send(this.encode(data));
+    return req;
   }
 
   public stop() {
@@ -114,15 +115,15 @@ class RPCManager {
 
     this.initialized = false;
   }
-  decode = (data: any) => {
+  decode = (data: any, format: BufferEncoding = 'utf8') => {
     if (b4a.isBuffer(data) || data instanceof Uint8Array) {
-      return JSON.parse(b4a.toString(data, 'utf-8'))
+      return JSON.parse(b4a.toString(data, format))
     }
     else if (typeof data === 'string') {
       return JSON.parse(data)
     }
   }
-  encode = (data: any) => {
+  encode = (data: any): string => {
     if (typeof data === 'string') {
       return data;
     } else {

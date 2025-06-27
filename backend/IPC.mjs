@@ -1,6 +1,6 @@
 import b4a from 'b4a';
 import RPC from 'bare-rpc';
-import { RPC_LOG } from "./rpc-commands.mjs";
+import { RPC_LOG } from './rpc-commands.mjs';
 class RPCManager {
     static instance;
     static IPC = null
@@ -31,12 +31,12 @@ class RPCManager {
             const handler = this.requestHandlers.get(command);
             if (handler) {
                 try {
-                    this.log(RPC_LOG, this.fileName, `Indide backend RPC handler method ${command}`)
+                    this.log(this.fileName, `Indide backend RPC handler method ${command}`)
                     const result = await handler(data);
-                    return this.encode(result);
+                    req.reply(this.encode(result));
                 } catch (err) {
-                    this.log(RPC_LOG, this.fileName, `Handler error for command ${command}:`, err.message);
-                    return this.encode({ error: err.message });
+                    this.log(this.fileName, `Handler error for command ${command}:`, err.message);
+                    req.reply(this.encode({ error: err.message }));
                 }
             }
 
@@ -44,15 +44,15 @@ class RPCManager {
             if (subs) {
                 for (const fn of subs) {
                     try {
-                        this.log(RPC_LOG, this.fileName, `Inside subscriber funcaiotn call for loop command ${command}`);
+                        this.log(this.fileName, `Inside subscriber funcaiotn call for loop command ${command}`);
                         fn(data);
                     } catch (e) {
-                        this.log(RPC_LOG, this.fileName, `Subscriber error for command ${command}`, e);
+                        this.log(this.fileName, `Subscriber error for command ${command}`, e);
                     }
                 }
             }
 
-            return this.encode({ staus: 'ok', 'message': 'data received' });
+            req.reply(this.encode({ staus: 'ok', 'message': 'data received' }));
         });
 
         this.initialized = true;
@@ -86,19 +86,24 @@ class RPCManager {
 
     send(command, data) {
         this._initIfNeeded();
-        if (!this.rpc) this.log(RPC_LOG, this.fileName, 'RPC not initialized.');
+        if (!this.rpc) this.log(this.fileName, 'RPC not initialized.');
 
         const req = this.rpc.request(command);
-        req.send(data);
+        req.send(this.encode(data));
+        return req;
     }
 
-    log(command, ...args) {
-        this._initIfNeeded();
-        if (!this.rpc) this.log(RPC_LOG, this.fileName, 'RPC not initialized.');
+    log(...args) {
+        const prod = false
+        console.log(...args)
+        if (prod) {
+            this._initIfNeeded();
+            if (!this.rpc) this.log(this.fileName, 'RPC not initialized.');
 
-        const payload = args.map(arg => this.decode(arg));
-        const req = this.rpc.request(command);
-        req.send(JSON.stringify(payload));
+            const payload = args.map(arg => this.decode(arg));
+            const req = this.rpc.request(RPC_LOG);
+            req.send(JSON.stringify(payload));
+        }
     }
 
     stop() {
@@ -120,13 +125,10 @@ class RPCManager {
         }
     }
 
-    encode = (data, format = 'utf-8') => {
-        if (typeof data === 'string') {
-            return b4a.from(data, format);
-        } else if (data instanceof Uint8Array || b4a.isBuffer(data)) {
-            return data;
+    encode = (data) => {
+        if (typeof data === 'string' || data instanceof Uint8Array || b4a.isBuffer(data)) {
         } else {
-            return b4a.from(JSON.stringify(data), format);
+            return JSON.stringify(data);
         }
     }
 }

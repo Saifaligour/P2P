@@ -1,4 +1,4 @@
-import { JOIN_ROOM, LEAVE_ROOM, RECEIVE_MESSAGE, RPC_LOG, SEND_MESSAGE } from '@/backend/rpc-commands.mjs';
+import { JOIN_GROUP, LEAVE_GROUP, READ_MESSAGE_FROM_STORE, RECEIVE_MESSAGE, RPC_LOG, SEND_MESSAGE } from '@/backend/rpc-commands.mjs';
 import { rpcService } from '@/hooks/RPC';
 import { addMessage, loadMessages, setActiveUser } from '@/Redux/chatReducer';
 import { useEffect, useState } from 'react';
@@ -13,8 +13,8 @@ export const useChat = () => {
 
   useEffect(() => {
 
-    if (activeUser && activeUser.roomId) {
-      rpcService.subscribe(RECEIVE_MESSAGE, (data: any) => {
+    if (activeUser && activeUser.groupId) {
+      rpcService.onRequest(RECEIVE_MESSAGE, (data: any) => {
         console.log('data recveid from peer', data)
         if (Array.isArray(data)) {
           dispatch(loadMessages(data));
@@ -23,15 +23,15 @@ export const useChat = () => {
         }
       });
 
-      rpcService.subscribe(RPC_LOG, (data: any) => {
-        console.log(data);
-
-      });
-      rpcService.send(JOIN_ROOM, activeUser.roomId);
+      rpcService.onRequest(RPC_LOG, (data: any) => console.log(data));
+      rpcService.send(JOIN_GROUP, activeUser.groupId);
+      rpcService.send(READ_MESSAGE_FROM_STORE, activeUser.groupId)
     }
     return () => {
-      rpcService.send(LEAVE_ROOM, activeUser.roomId)
-      rpcService.stop();
+      const res = rpcService.send(LEAVE_GROUP, activeUser.groupId).reply()
+      const message = rpcService.decode(res) || []
+      console.log('Read message ', message.length);
+      dispatch(loadMessages(message));
     };
   }, [activeUser, dispatch]);
 
@@ -46,12 +46,12 @@ export const useChat = () => {
       type: 'message',
       text,
       sender: 'other',
-      time: now,
-      roomId: activeUser?.roomId,
+      timestamp: now,
+      groupId: activeUser?.groupId,
     };
     try {
 
-      rpcService.send(SEND_MESSAGE, newMessage);
+      rpcService.send(SEND_MESSAGE, [newMessage]);
     } catch {
       console.error('Failed to send message:');
     }

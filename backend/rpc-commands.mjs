@@ -1,9 +1,12 @@
-export const SEND_MESSAGE = 1;
-export const RECEIVE_MESSAGE = 1;
-export const SEND_FILE = 2;
-export const RECEIVE_FILE = 2;
-export const SEND_NOTIFICATION = 3;
-export const RECEIVE_NOTIFICATION = 3;
-export const JOIN_ROOM = 4;
-export const LEAVE_ROOM = 5;
-export const RPC_LOG = 6;
+export const RPC_LOG = 1; // BACKEND LOGS
+export const FETCH_GROUP_DETAILS = 2 // RECEIVE GROUP DETAILS FROM BACKEND
+export const CREATE_GROUP = 3 // CREATE NWE GROUP
+export const JOIN_GROUP = 4;
+export const LEAVE_GROUP = 5; // LEAVE ROOM
+
+export const SEND_MESSAGE = 6; // SEND MSG TO BACKEND 
+export const RECEIVE_MESSAGE = 6; // SEND MSG TO UI
+export const READ_MESSAGE_FROM_STORE = 7; // SEND MSG TO UI
+
+
+

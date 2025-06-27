@@ -1,4 +1,6 @@
 import { fetchGroupDetails } from '@/backend/Api';
+import { CREATE_GROUP, RPC_LOG } from '@/backend/rpc-commands.mjs';
+import { rpcService } from '@/hooks/RPC';
 import {
   resetCreateUser,
   setGroupDescription,
@@ -8,6 +10,7 @@ import {
 import store, { RootState } from '@/Redux/store';
 import { setUserList } from '@/Redux/userListReducer';
 import { useRouter } from 'expo-router';
+import { useEffect } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 
 export const useCreateUser = () => {
@@ -29,31 +32,35 @@ export const useCreateUser = () => {
     dispatch(setUserList([groupDetails, ...users]));
   };
 
-  const submitGroup = () => {
-     const isAvatarImage = !!groupDP;
-        const newGroup = {
-          id: Date.now().toString(),
-          roomId: "room_" + Math.random().toString(36).slice(2, 10),
-          name: groupName,
-          message: groupDescription || '',
-          time: new Date().toLocaleString(),
-          avatar: groupDP || groupName.charAt(0).toUpperCase(),
-          avatarType: isAvatarImage ? 'image' : 'name',
-          isOnline: false,
-          isRead: false,
-          isGroup: true,
-          members: [],
-          groupAdmin: '',
-          createdAt: new Date().toISOString(),
-        }
+  const submitGroup = async () => {
+    const isAvatarImage = !!groupDP;
+    const newGroup = {
+      id: Date.now().toString(),
+      groupId: groupName,
+      name: groupName,
+      message: groupDescription || '',
+      descirption: groupDescription,
+      time: new Date().toLocaleString(),
+      avatar: groupDP || groupName.charAt(0).toUpperCase(),
+      avatarType: isAvatarImage ? 'image' : 'name',
+      isOnline: false,
+      isRead: false,
+      isGroup: true,
+      members: [],
+      groupAdmin: '',
+      createdAt: new Date().toISOString(),
+    }
     addGroup(newGroup);
+
     reset();
     goBack();
+    rpcService.send(CREATE_GROUP, newGroup)
+
   };
 
-  const joinGroup = async (roomId: string) => {
+  const joinGroup = async (groupId: string) => {
     try {
-      const group = await fetchGroupDetails(roomId);
+      const group = await fetchGroupDetails(groupId);
       if (group) {
         addGroup(group);
         goBack();
@@ -63,7 +70,10 @@ export const useCreateUser = () => {
       console.error('Failed to join group:', error);
     }
   };
+  useEffect(() => {
+    rpcService.onRequest(RPC_LOG, (data: any) => console.log(data));
 
+  }, [])
   return {
     groupName,
     groupDescription,
