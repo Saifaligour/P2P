@@ -96,13 +96,13 @@ RPC.onRequest(CREATE_GROUP, async (group) => {
 
 RPC.onRequest(JOIN_GROUP, ({ groupId }) => {
   const topic = generateHash(groupId)
-  print(`[Command:JOIN_GROUP] Joining chat Room: ${topic.hex}`);
+  print(`[Command:JOIN_GROUP] Joining chat Room:`, topic);
   joinGroup(topic.buffer);
 });
 
 RPC.onRequest(LEAVE_GROUP, ({ groupId }) => {
   const topic = generateHash(groupId)
-  print(`[Command:LEAVE_GROUP] Leaving chat Room: ${topic.hex}`);
+  print(`[Command:LEAVE_GROUP] Leaving chat Room: ${topic}`);
   swarm.leave(topic.buffer)
 });
 

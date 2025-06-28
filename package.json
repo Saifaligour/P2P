@@ -12,7 +12,7 @@
     "web": "expo start --web",
     "lint": "expo lint",
     "bare": "nodemon --watch backend --exec  'npx bare-pack --target ios --target android  --linked --out hooks/app.bundle.mjs backend/app.mjs'",
-    "clean": "expo prebuild --clean",
+    "clean": "expo prebuild --clean && rm -rf node_modules",
     "prebuild": "expo prebuild",
     "doctor": "npx expo-doctor",
     "log": "log stream --level=debug --predicate \"subsystem == 'bare'\""

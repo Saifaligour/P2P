@@ -9,8 +9,19 @@ export const useChat = () => {
   const messages = useSelector((state: any) => state.chat.messages);
   const activeUser = useSelector((state: any) => state.chat.activeUser);
   const [text, setText] = useState('');
+  const [connection, setConnection] = useState({})
   // Setup and teardown RPC for chat room
 
+
+  const readMessage = async () => {
+    if (activeUser && activeUser.groupId && messages.length === 0) {
+      const res = await rpcService.send(READ_MESSAGE_FROM_STORE, { groupId: activeUser.groupId }).reply()
+      const message = rpcService.decode(res)
+      console.log('Read message ', message);
+      if (message)
+        dispatch(loadMessages(message));
+    }
+  }
   useEffect(() => {
 
     if (activeUser && activeUser.groupId) {
@@ -26,27 +37,22 @@ export const useChat = () => {
       rpcService.onRequest(RPC_LOG, (data: any) => console.log(data));
       rpcService.send(JOIN_GROUP, activeUser);
       rpcService.onRequest(UPDATE_PEER_CONNECTION, (data) => {
-        console.log('peet connection', data)
-        const status = new Map(data).get(activeUser.groupId)
-        console.log(status);
-
+        console.log('peer connection', data)
+        if (data.length) {
+          const status = new Map(data).get(activeUser.groupId)
+          setConnection(status);
+        }
       })
     }
+    readMessage()
     return () => {
       rpcService.send(LEAVE_GROUP, activeUser)
     };
   }, [activeUser, dispatch]);
 
-  const readMessage = async () => {
-    if (activeUser && activeUser.groupId) {
-      const res = await rpcService.send(READ_MESSAGE_FROM_STORE, { groupId: activeUser.groupId }).reply()
-      const message = rpcService.decode(res) || []
-      console.log('Read message ', message);
-      dispatch(loadMessages(message));
-    }
-  }
+
   useEffect(() => {
-    readMessage()
+
   }, [])
 
   const sendMessage = async () => {
@@ -85,5 +91,6 @@ export const useChat = () => {
     sendMessage,
     activeUser,
     setActiveUserInChat,
+    connection
   };
 };

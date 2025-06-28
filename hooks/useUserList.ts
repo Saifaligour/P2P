@@ -71,9 +71,9 @@ export const useUserList = () => {
     console.log(`Inside fetchList method`);
     const res = await rpcService.send(FETCH_GROUP_DETAILS, {}).reply();
     const users = rpcService.decode(res) || []
-    console.log('users', users.length);
-
-    dispatch(setUserList(users));
+    console.log('users', users);
+    if (users?.length)
+      dispatch(setUserList(users));
 
   }
   useEffect(() => {

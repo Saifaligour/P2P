@@ -16,14 +16,14 @@ import {
 } from 'react-native';
 
 // Header Component
-const Header = memo(({ activeUser }: { activeUser: any }) => {
+const Header = memo(({ activeUser, connection }: { activeUser: any, connection: any }) => {
   return (
     <View style={styles.header}>
       <BackButton style={styles.backButton} color="#333" size={24} />
       <View style={styles.headerInfo}>
-        <Text style={styles.roomName}>{activeUser ? activeUser.groupId : 'Chat'}</Text>
+        <Text style={styles.roomName}>{activeUser ? activeUser.name : 'Chat'}</Text>
         {activeUser && activeUser.isGroup && (
-          <Text style={styles.memberCount}>{activeUser.members?.length || 1} members</Text>
+          <Text style={styles.memberCount}>{connection?.current || 0} members</Text>
         )}
       </View>
       <View style={styles.headerIcons}>
@@ -147,12 +147,12 @@ InputBar.displayName = "InputBar";
 
 const ChatScreen = () => {
   const flatListRef = useRef(null);
-  const { messages, text, setText, sendMessage, activeUser } = useChat();
+  const { messages, text, setText, sendMessage, activeUser, connection } = useChat();
 
   return (
     <SafeAreaView style={styles.container}>
       <StatusBar barStyle="dark-content" backgroundColor="#f0f2f5" />
-      <Header activeUser={activeUser} />
+      <Header activeUser={activeUser} connection={connection} />
 
       <KeyboardAvoidingView
         style={{ flex: 1 }}
