@@ -1,4 +1,4 @@
-import { JOIN_GROUP, LEAVE_GROUP, READ_MESSAGE_FROM_STORE, RECEIVE_MESSAGE, RPC_LOG, SEND_MESSAGE } from '@/backend/rpc-commands.mjs';
+import { JOIN_GROUP, LEAVE_GROUP, READ_MESSAGE_FROM_STORE, RECEIVE_MESSAGE, RPC_LOG, SEND_MESSAGE, UPDATE_PEER_CONNECTION } from '@/backend/rpc-commands.mjs';
 import { rpcService } from '@/hooks/RPC';
 import { addMessage, loadMessages, setActiveUser } from '@/Redux/chatReducer';
 import { useEffect, useState } from 'react';
@@ -24,16 +24,30 @@ export const useChat = () => {
       });
 
       rpcService.onRequest(RPC_LOG, (data: any) => console.log(data));
-      rpcService.send(JOIN_GROUP, activeUser.groupId);
-      rpcService.send(READ_MESSAGE_FROM_STORE, activeUser.groupId)
+      rpcService.send(JOIN_GROUP, activeUser);
+      rpcService.onRequest(UPDATE_PEER_CONNECTION, (data) => {
+        console.log('peet connection', data)
+        const status = new Map(data).get(activeUser.groupId)
+        console.log(status);
+
+      })
     }
     return () => {
-      const res = rpcService.send(LEAVE_GROUP, activeUser.groupId).reply()
-      const message = rpcService.decode(res) || []
-      console.log('Read message ', message.length);
-      dispatch(loadMessages(message));
+      rpcService.send(LEAVE_GROUP, activeUser)
     };
   }, [activeUser, dispatch]);
+
+  const readMessage = async () => {
+    if (activeUser && activeUser.groupId) {
+      const res = await rpcService.send(READ_MESSAGE_FROM_STORE, { groupId: activeUser.groupId }).reply()
+      const message = rpcService.decode(res) || []
+      console.log('Read message ', message);
+      dispatch(loadMessages(message));
+    }
+  }
+  useEffect(() => {
+    readMessage()
+  }, [])
 
   const sendMessage = async () => {
     if (!text.trim()) return;

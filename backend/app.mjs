@@ -5,10 +5,10 @@
 import Hyperswarm from 'hyperswarm'; // Module for P2P networking and connecting peers
 // import { decryptWithPrivateKey, encryptWithPublicKey } from './crypto';
 import b4a from 'b4a';
-import { createHash } from 'bare-crypto';
 import Pear from 'bare-process'; // or global `Pear` (if auto-injected)
+import { generateHash } from './crypto.mjs';
 import RPCManager from './IPC.mjs';
-import { CREATE_GROUP, FETCH_GROUP_DETAILS, JOIN_GROUP, LEAVE_GROUP, READ_MESSAGE_FROM_STORE, RECEIVE_MESSAGE, SEND_MESSAGE } from './rpc-commands.mjs';
+import { CREATE_GROUP, FETCH_GROUP_DETAILS, JOIN_GROUP, LEAVE_GROUP, READ_MESSAGE_FROM_STORE, RECEIVE_MESSAGE, SEND_MESSAGE, UPDATE_PEER_CONNECTION } from './rpc-commands.mjs';
 import { closeStore, createGroup, getAllGroupDetails, readMessagesFromStore, writeMessagesToStore } from './store.mjs';
 const swarm = new Hyperswarm()
 const { IPC } = BareKit
@@ -22,7 +22,7 @@ function print(...args) {
 // (This is not a requirement, but it helps avoid DHT pollution)
 
 Pear.on('exit', () => {
-  console.log('pear on exit');
+  console.log('------------- Pear on exit ----------------');
   swarm.destroy()
   closeStore()
 })
@@ -51,7 +51,7 @@ swarm.on('connection', (peer, info) => {
     // const m = decryptWithPrivateKey(base64)
     print('Received message from peer:', message)
     sendMessageToUI(message);
-    writeMessagesToStore(message)
+    writeMessagesToStore(message, 'peer')
 
   })
 
@@ -59,7 +59,15 @@ swarm.on('connection', (peer, info) => {
 })
 
 swarm.on('update', () => {
-  print(`Peers: connections ${swarm.connections.size}`)
+  const peer = [];
+  for (const e of topicPeersMap.keys()) {
+    const current = topicPeersMap.get(e).size
+    const total = swarm.connections.size;
+    peer.push([e, { current, total }])
+    print(`Peers: connections  total :${total}, current: ${current}`)
+  }
+
+  RPC.send(UPDATE_PEER_CONNECTION, peer)
 })
 
 swarm.on('network-update', (data) => {
@@ -81,29 +89,27 @@ RPC.onRequest(FETCH_GROUP_DETAILS, async () => {
 });
 
 RPC.onRequest(CREATE_GROUP, async (group) => {
-  const groupDetails = JSON.parse(RPC.decode(group));
   print(`[Command:CREATE_GROUP] Creating new group`);
   // Sending back to UI
-  return createGroup(groupDetails)
+  return createGroup(group)
 });
 
-RPC.onRequest(JOIN_GROUP, (groupId) => {
-  const topicBuffer = createHash('sha256').update(groupId).digest()
-  print(`[Command:JOIN_GROUP] Joining chat Room: ${groupId}`);
-  joinGroup(topicBuffer);
+RPC.onRequest(JOIN_GROUP, ({ groupId }) => {
+  const topic = generateHash(groupId)
+  print(`[Command:JOIN_GROUP] Joining chat Room: ${top.hex}`);
+  joinGroup(topic.buffer);
 });
 
-RPC.onRequest(LEAVE_GROUP, (groupId) => {
-  const topicBuffer = createHash('sha256').update(groupId).digest()
-  print(`[Command:LEAVE_GROUP] Leaving chat Room: ${groupId}`);
-  swarm.leave(topicBuffer)
+RPC.onRequest(LEAVE_GROUP, ({ groupId }) => {
+  const topic = generateHash(groupId)
+  print(`[Command:LEAVE_GROUP] Leaving chat Room: ${topic.hex}`);
+  swarm.leave(topic.buffer)
 });
 
 RPC.onRequest(RECEIVE_MESSAGE, (data) => {
   print(`[Command:RECEIVE_MESSAGE] sending message to peer and writing in store`);
-  const message = JSON.parse(RPC.decode(data));
-  sendMsgToPeer(message);
-  writeMessagesToStore(message)
+  sendMsgToPeer(data);
+  writeMessagesToStore(data, 'currentUser')
 
 });
 
@@ -125,7 +131,10 @@ async function joinGroup(topicBuffer) {
 }
 
 function sendMsgToPeer(message) {
-  const peers = topicPeersMap.get(message[0].groupId)
+  const topicBuffer = generateHash(message[0].groupId);
+  const topic = b4a.toString(topicBuffer, 'hex')
+
+  const peers = topicPeersMap.get(topic)
   if (!peers) {
     print(`No peers found for topic ${message[0].groupId}`)
     return

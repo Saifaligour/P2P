@@ -40,7 +40,7 @@ export const useUserList = () => {
 
   const filteredUsers = useMemo(() => {
     const lowerSearch = search.toLowerCase();
-    return users.filter((user) => user.name.toLowerCase().includes(lowerSearch));
+    return (users || []).filter((user) => user.name.toLowerCase().includes(lowerSearch));
   }, [search, users]);
 
   const handleOpenChat = (user: User) => {

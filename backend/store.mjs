@@ -60,11 +60,13 @@ async function initStore() {
 }
 
 export async function initAutobase(uniqueId) {
+    print(` autobase cache size : ${autobaseCache.size}`)
     // Check cache first
     if (autobaseCache.has(uniqueId)) {
         const cached = autobaseCache.get(uniqueId);
         if (cached) {
             print(`[initAutobase] Returning cached autobase for group ${uniqueId}`);
+            await cached.ready();
             return cached;
         }
     }
@@ -86,11 +88,11 @@ export async function initAutobase(uniqueId) {
             }
         });
         print(`[initAutobase] Autobase instance created for group ${uniqueId}`);
-        await base.ready();
-        print(`[initAutobase] Autobase created successfully for group ${uniqueId}`);
-
+        print(`[initAutobase] Autobase cache created for group ${uniqueId}`);
         // Cache the autobase instance
         autobaseCache.set(uniqueId, base);
+        await base.ready();
+        print(`[initAutobase] Autobase created successfully for group ${uniqueId}`);
         return base;
     } catch (error) {
         print(`[initAutobase] Failed to create autobase for group ${uniqueId}: ${error.message}, Stack: ${error.stack}`);
@@ -130,7 +132,7 @@ export async function createGroup(group) {
     }
 }
 
-export async function writeMessagesToStore(messages) {
+export async function writeMessagesToStore(messages, from) {
     if (!messages.length) {
         print('[writeMessagesToStore] No messages to write');
         return [];
@@ -144,6 +146,7 @@ export async function writeMessagesToStore(messages) {
 
         const seqNums = [];
         for (const msg of messages) {
+            msg.sender = from === 'peer' ? 'other' : 'me'
             const seq = await base.append(msg);
             print(`[writeMessagesToStore] Message appended with seq ${seq} for group ${groupId}`);
             seqNums.push(seq);
@@ -163,25 +166,28 @@ export async function writeMessagesToStore(messages) {
     }
 }
 
-export async function readMessagesFromStore(groupId, opts = {}) {
+export async function readMessagesFromStore(data) {
+    const { groupId, limit = 100, reverse = false, ...opts } = data;
     try {
         print(`[readMessagesFromStore] Reading messages for group ${groupId} with options ${JSON.stringify(opts)}`);
         const base = await initAutobase(groupId);
         const messages = [];
-        const { limit = 100 } = opts;
 
-        const stream = base.view.createReadStream({
-            limit,
-            reverse: opts.reverse || false,
-            ...opts
-        });
+        // const stream = base.view.createReadStream({
+        //     limit,
+        //     reverse,
+        //     ...opts
+        // });
         print(`[readMessagesFromStore] Created read stream for group ${groupId}`);
 
-        for await (const node of stream) {
-            if (node) {
-                messages.push(node);
-                print(`[readMessagesFromStore] Read message for group ${groupId}`);
-            }
+        // for await (const node of stream) {
+        //     if (node) {
+        //         messages.push(node);
+        //         print(`[readMessagesFromStore] Read message for group ${groupId}`);
+        //     }
+        // }
+        for (let i = 0; i < base.view.length; i++) {
+            messages.push(await base.view.get(i));
         }
 
         const result = opts.reverse ? messages : messages.reverse();

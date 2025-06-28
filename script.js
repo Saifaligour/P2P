@@ -1,89 +1,18 @@
 const data = {
     "type": "Buffer",
-    "data": [
-        9,
-        238,
-        161,
-        214,
-        213,
-        103,
-        69,
-        243,
-        235,
-        199,
-        10,
-        60,
-        80,
-        143,
-        212,
-        93,
-        65,
-        71,
-        41,
-        251,
-        203,
-        201,
-        215,
-        144,
-        107,
-        6,
-        11,
-        49,
-        99,
-        158,
-        121,
-        119,
-        97,
-        40,
-        93,
-        81,
-        119,
-        201,
-        72,
-        80,
-        46,
-        150,
-        50,
-        30,
-        140,
-        221,
-        178,
-        100,
-        102,
-        166,
-        123,
-        29,
-        200,
-        222,
-        81,
-        0,
-        157,
-        7,
-        42,
-        51,
-        228,
-        154,
-        117,
-        178,
-        29,
-        100,
-        84,
-        134,
-        41,
-        165,
-        112,
-        61,
-        29,
-        100,
-        84,
-        134,
-        41,
-        165,
-        112,
-        61
-    ]
+    "data": []
 }
 // const topic = b4a.toString(new Uint8Array(data.data), 'hex')
-const topic = Buffer.from(data.data).toString('hex');
+// const topic = Buffer.from(data.data).toString('hex');
+// console.log(topic);
 
-console.log(topic);
+const topicPeersMap = new Map([['test1', new Set([{ name: 'saif' }])], ['test2', new Set([{ name: 'saif' }])]])
+const peer = []
+for (const e of topicPeersMap.keys()) {
+    const current = topicPeersMap.get(e).size
+    peer.push([e, { current, }])
+    console.log(current)
+}
+
+
+console.log(new Map(JSON.parse(JSON.stringify(peer))));

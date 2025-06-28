@@ -122,6 +122,7 @@ class RPCManager {
     else if (typeof data === 'string') {
       return JSON.parse(data)
     }
+    return data;
   }
   encode = (data: any): string => {
     if (typeof data === 'string') {

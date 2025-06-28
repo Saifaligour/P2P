@@ -31,11 +31,13 @@ class RPCManager {
             const handler = this.requestHandlers.get(command);
             if (handler) {
                 try {
-                    this.log(this.fileName, `Indide backend RPC handler method ${command}`)
-                    const result = await handler(data);
+                    this.log('IPC', `Indide backend RPC handler method ${command}`)
+                    const msg = this.decode(data)
+                    this.log(msg)
+                    const result = await handler(msg);
                     req.reply(this.encode(result));
                 } catch (err) {
-                    this.log(this.fileName, `Handler error for command ${command}:`, err.message);
+                    this.log('IPC', `Handler error for command ${command}:`, err.message);
                     req.reply(this.encode({ error: err.message }));
                 }
             }
@@ -44,10 +46,10 @@ class RPCManager {
             if (subs) {
                 for (const fn of subs) {
                     try {
-                        this.log(this.fileName, `Inside subscriber funcaiotn call for loop command ${command}`);
+                        this.log('IPC', `Inside subscriber funcaiotn call for loop command ${command}`);
                         fn(data);
                     } catch (e) {
-                        this.log(this.fileName, `Subscriber error for command ${command}`, e);
+                        this.log('IPC', `Subscriber error for command ${command}`, e);
                     }
                 }
             }
@@ -86,7 +88,7 @@ class RPCManager {
 
     send(command, data) {
         this._initIfNeeded();
-        if (!this.rpc) this.log(this.fileName, 'RPC not initialized.');
+        if (!this.rpc) this.log('IPC', 'RPC not initialized.');
 
         const req = this.rpc.request(command);
         req.send(this.encode(data));
@@ -98,7 +100,7 @@ class RPCManager {
         console.log(...args)
         if (prod) {
             this._initIfNeeded();
-            if (!this.rpc) this.log(this.fileName, 'RPC not initialized.');
+            if (!this.rpc) this.log('IPC', 'RPC not initialized.');
 
             const payload = args.map(arg => this.decode(arg));
             const req = this.rpc.request(RPC_LOG);
@@ -113,20 +115,22 @@ class RPCManager {
         this.initialized = false;
     }
 
-    decode = (data, format = 'utf-8') => {
+    decode = (data, encoding = 'utf-8') => {
+        if (data == null) return {};
+        let str;
         if (b4a.isBuffer(data) || data instanceof Uint8Array) {
-            return b4a.toString(data, format)
+            str = b4a.toString(data, encoding);
         }
-        else if (typeof data === 'string') {
-            return data;
-        }
-        else if (data instanceof Object) {
-            return JSON.stringify(data)
+        try {
+            return JSON.parse(str);
+        } catch {
+            return str;
         }
     }
 
     encode = (data) => {
         if (typeof data === 'string' || data instanceof Uint8Array || b4a.isBuffer(data)) {
+            return data;
         } else {
             return JSON.stringify(data);
         }

@@ -1,5 +1,5 @@
 import b4a from 'b4a';
-import crypto, { createHash } from 'bare-crypto';
+import { createHash } from 'bare-crypto';
 
 // Your existing key and IV (converted to bare-crypto compatible format)
 const key = b4a.from('09b09fdccd61485f8b8ceb676d2085740a0d64bbf6192c62cc3b52fcd7f16ae0', 'hex');
@@ -85,5 +85,8 @@ export const generateHash = (input, algorithm = 'SHA256') => {
     hash.update(inputBuffer)
 
     // Return as Uint8Array (32 bytes for SHA256)
-    return hash.digest()
+    return {
+        buffer: hash.digest(),
+        hex: b4a.from(inputBuffer, 'hex')
+    }
 }
