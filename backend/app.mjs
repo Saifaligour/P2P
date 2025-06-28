@@ -96,7 +96,7 @@ RPC.onRequest(CREATE_GROUP, async (group) => {
 
 RPC.onRequest(JOIN_GROUP, ({ groupId }) => {
   const topic = generateHash(groupId)
-  print(`[Command:JOIN_GROUP] Joining chat Room: ${top.hex}`);
+  print(`[Command:JOIN_GROUP] Joining chat Room: ${topic.hex}`);
   joinGroup(topic.buffer);
 });
 
