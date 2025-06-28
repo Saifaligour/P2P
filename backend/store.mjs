@@ -169,7 +169,7 @@ export async function writeMessagesToStore(messages, from) {
 export async function readMessagesFromStore(data) {
     const { groupId, limit = 100, reverse = false, ...opts } = data;
     try {
-        print(`[readMessagesFromStore] Reading messages for group ${groupId} with options ${JSON.stringify(opts)}`);
+        print(`[readMessagesFromStore] Reading messages for group ${groupId} with options ${JSON.stringify(data)}`);
         const base = await initAutobase(groupId);
         const messages = [];
 
@@ -190,7 +190,7 @@ export async function readMessagesFromStore(data) {
             messages.push(await base.view.get(i));
         }
 
-        const result = opts.reverse ? messages : messages.reverse();
+        const result = reverse ? messages : messages.reverse();
         print(`[readMessagesFromStore] Read ${result.length} messages for group ${groupId}`);
         return result;
     } catch (error) {

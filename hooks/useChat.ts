@@ -17,11 +17,11 @@ export const useChat = () => {
   useEffect(() => {
     const readMessage = async () => {
       if (activeUser && activeUser.groupId && messages.length === 0) {
-        const res = await rpcService.send(READ_MESSAGE_FROM_STORE, { groupId: activeUser.groupId }).reply()
+        const res = await rpcService.send(READ_MESSAGE_FROM_STORE, { groupId: activeUser.groupId, reverse: true }).reply()
         const message = rpcService.decode(res)
         console.log('Read message ', message);
         if (message)
-          dispatch(addMessageInBatchs(message));
+          dispatch(loadMessages(message));
       }
     }
     const generateHash = async () => {
@@ -38,7 +38,7 @@ export const useChat = () => {
       rpcService.onRequest(RECEIVE_MESSAGE, (data: any) => {
         console.log('data recveid from peer', data)
         if (Array.isArray(data)) {
-          dispatch(loadMessages(data));
+          dispatch(addMessageInBatchs(data));
         } else {
           dispatch(addMessage(data));
         }
