@@ -31,13 +31,15 @@ class RPCManager {
             const handler = this.requestHandlers.get(command);
             if (handler) {
                 try {
-                    this.log('IPC', `Indide backend RPC handler method ${command}`)
+                    this.log('[IPC]', `Indide backend RPC handler method ${command}`)
                     const msg = this.decode(data)
-                    this.log(msg)
+                    this.log(`[IPC] received message from UI`, msg)
                     const result = await handler(msg);
-                    req.reply(this.encode(result));
+                    const reply = this.encode(result)
+                    req.reply(reply);
+                    this.log(`[IPC] replying back to UI`, reply)
                 } catch (err) {
-                    this.log('IPC', `Handler error for command ${command}:`, err.message);
+                    this.log('[IPC]', `Handler error for command ${command}:`, err.message);
                     req.reply(this.encode({ error: err.message }));
                 }
             }
@@ -46,10 +48,10 @@ class RPCManager {
             if (subs) {
                 for (const fn of subs) {
                     try {
-                        this.log('IPC', `Inside subscriber funcaiotn call for loop command ${command}`);
+                        this.log('[IPC]', `Inside subscriber funcaiotn call for loop command ${command}`);
                         fn(data);
                     } catch (e) {
-                        this.log('IPC', `Subscriber error for command ${command}`, e);
+                        this.log('[IPC]', `Subscriber error for command ${command}`, e);
                     }
                 }
             }
@@ -88,7 +90,7 @@ class RPCManager {
 
     send(command, data) {
         this._initIfNeeded();
-        if (!this.rpc) this.log('IPC', 'RPC not initialized.');
+        if (!this.rpc) this.log('[IPC]', 'RPC not initialized.');
 
         const req = this.rpc.request(command);
         req.send(this.encode(data));
@@ -100,7 +102,7 @@ class RPCManager {
         console.log(...args)
         if (prod) {
             this._initIfNeeded();
-            if (!this.rpc) this.log('IPC', 'RPC not initialized.');
+            if (!this.rpc) this.log('[IPC]', 'RPC not initialized.');
 
             const payload = args.map(arg => this.decode(arg));
             const req = this.rpc.request(RPC_LOG);

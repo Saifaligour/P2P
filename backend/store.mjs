@@ -29,23 +29,23 @@ async function initStore() {
             print(`[initStore] Initializing Corestore at ${STORAGE_PATH}`);
             // Disable replication to prevent data sharing with peers
             store = new Corestore(STORAGE_PATH, { lock: true, replicate: false });
-            print('[initStore] Corestore instance created');
+            print(`[initStore] Corestore instance created`);
             await store.ready();
-            print('[initStore] Corestore initialized successfully');
+            print(`[initStore] Corestore initialized successfully`);
         } catch (error) {
             print(`[initStore] Failed to initialize Corestore: ${error.message}, Stack: ${error.stack}`);
             if (error.message.includes('No locks available')) {
-                print('[initStore] Lock conflict detected. Attempting to clear lock file.');
+                print(`[initStore] Lock conflict detected. Attempting to clear lock file.`);
                 try {
                     const lockFile = join(STORAGE_PATH, 'db', 'LOCK');
                     if (fs.existsSync(lockFile)) {
                         fs.unlinkSync(lockFile);
-                        print('[initStore] Lock file removed. Retrying Corestore initialization.');
+                        print(`[initStore] Lock file removed. Retrying Corestore initialization.`);
                         store = new Corestore(STORAGE_PATH, { lock: true, replicate: false });
                         await store.ready();
-                        print('[initStore] Corestore initialized after clearing lock');
+                        print(`[initStore] Corestore initialized after clearing lock`);
                     } else {
-                        throw new Error('Lock file not found, but lock error persists');
+                        throw new Error(`Lock file not found, but lock error persists`);
                     }
                 } catch (retryError) {
                     print(`[initStore] Retry failed: ${retryError.message}, Stack: ${retryError.stack}`);
@@ -108,7 +108,7 @@ export async function createGroup(group) {
 
         // for await (const entry of metaBase.view.createReadStream()) {
         //     if (entry.value?.groupId === groupId && !entry.value?.deleted) {
-        //       print( `Group ${groupId} already exists`);
+        //       print(`Group ${groupId} already exists`);
         //         throw new Error(`Group ${groupId} already exists`);
         //     }
         // }
@@ -134,7 +134,7 @@ export async function createGroup(group) {
 
 export async function writeMessagesToStore(messages, from) {
     if (!messages.length) {
-        print('[writeMessagesToStore] No messages to write');
+        print(`[writeMessagesToStore] No messages to write`);
         return [];
     }
     console.log(messages);
@@ -273,12 +273,12 @@ export async function getGroupSummary(groupId, lastSeenTimestamp = 0) {
 
 export async function getAllGroupSummaries(lastSeenMap = {}) {
     try {
-        print('[getAllGroupSummaries] Fetching all group summaries');
+        print(`[getAllGroupSummaries] Fetching all group summaries`);
         const metaBase = await initAutobase(META_GROUP);
         const summaries = [];
 
         const stream = metaBase.view.createReadStream();
-        print('[getAllGroupSummaries] Created read stream for all group summaries');
+        print(`[getAllGroupSummaries] Created read stream for all group summaries`);
         for await (const entry of stream) {
             if (entry.value?.groupId && !entry.value?.deleted) {
                 const meta = entry.value;
@@ -302,16 +302,16 @@ export async function getAllGroupSummaries(lastSeenMap = {}) {
 
 export async function getAllGroupDetails() {
     try {
-        print('[getAllGroupDetails] Fetching all group details');
+        print(`[getAllGroupDetails] Fetching all group details`);
         const metaBase = await initAutobase(META_GROUP);
         const details = [];
 
         // const stream = metaBase.view.createReadStream();
-        print('[getAllGroupDetails] Created read stream for all group details');
+        print(`[getAllGroupDetails] Created read stream for all group details`);
         // for await (const entry of stream) {
         //     if (entry.value?.groupId && !entry.value?.deleted) {
         //         details.push(entry.value);
-        //       print( `Added details for group ${entry.value.groupId}`);
+        //       print(`Added details for group ${entry.value.groupId}`);
         //     }
         // }
         for (let i = 0; i < metaBase.view.length; i++) {
@@ -340,20 +340,20 @@ export async function deleteGroup(groupId) {
 
 export async function cleanup() {
     try {
-        print('[cleanup] Starting cleanup');
+        print(`[cleanup] Starting cleanup`);
         // Clear the autobase cache
         autobaseCache.clear();
-        print('[cleanup] Group meta base closed');
+        print(`[cleanup] Group meta base closed`);
         if (store) {
             await store.close();
             store = null;
-            print('[cleanup] Corestore closed');
+            print(`[cleanup] Corestore closed`);
         }
         if (fs.existsSync(STORAGE_PATH)) {
             fs.rmSync(STORAGE_PATH, { recursive: true, force: true });
             print(`[cleanup] Removed storage directory ${STORAGE_PATH}`);
         }
-        print('[cleanup] Cleanup completed');
+        print(`[cleanup] Cleanup completed`);
     } catch (error) {
         print(`[cleanup] Failed to cleanup: ${error.message}, Stack: ${error.stack}`);
         throw error;
@@ -362,16 +362,16 @@ export async function cleanup() {
 
 export async function closeStore() {
     try {
-        print('[closeStore] Starting Closing');
+        print(`[closeStore] Starting Closing`);
         // Clear the autobase cache
         autobaseCache.clear();
 
         if (store) {
             await store.close();
             store = null;
-            print('[closeStore] Corestore closed');
+            print(`[closeStore] Corestore closed`);
         }
-        print('[closeStore] Closing completed');
+        print(`[closeStore] Closing completed`);
     } catch (error) {
         print(`[closeStore] Failed to cleanup: ${error.message}, Stack: ${error.stack}`);
         throw error;

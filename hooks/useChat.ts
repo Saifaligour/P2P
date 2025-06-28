@@ -1,30 +1,40 @@
-import { JOIN_GROUP, LEAVE_GROUP, READ_MESSAGE_FROM_STORE, RECEIVE_MESSAGE, RPC_LOG, SEND_MESSAGE, UPDATE_PEER_CONNECTION } from '@/backend/rpc-commands.mjs';
+import { GENERATE_HASH, JOIN_GROUP, LEAVE_GROUP, READ_MESSAGE_FROM_STORE, RECEIVE_MESSAGE, RPC_LOG, SEND_MESSAGE, UPDATE_PEER_CONNECTION } from '@/backend/rpc-commands.mjs';
 import { rpcService } from '@/hooks/RPC';
-import { addMessage, loadMessages, setActiveUser } from '@/Redux/chatReducer';
+import { addMessage, addMessageInBatchs, loadMessages, setActiveUser, setGroupIdHash } from '@/Redux/chatReducer';
+import store, { RootState } from '@/Redux/store';
 import { useEffect, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 
 export const useChat = () => {
   const dispatch = useDispatch();
-  const messages = useSelector((state: any) => state.chat.messages);
-  const activeUser = useSelector((state: any) => state.chat.activeUser);
+  const messages = useSelector((state: RootState) => state.chat.messages);
+  const activeUser = useSelector((state: RootState) => state.chat.activeUser);
   const [text, setText] = useState('');
   const [connection, setConnection] = useState({})
-  // Setup and teardown RPC for chat room
 
 
-  const readMessage = async () => {
-    if (activeUser && activeUser.groupId && messages.length === 0) {
-      const res = await rpcService.send(READ_MESSAGE_FROM_STORE, { groupId: activeUser.groupId }).reply()
-      const message = rpcService.decode(res)
-      console.log('Read message ', message);
-      if (message)
-        dispatch(loadMessages(message));
-    }
-  }
+
   useEffect(() => {
+    const readMessage = async () => {
+      if (activeUser && activeUser.groupId && messages.length === 0) {
+        const res = await rpcService.send(READ_MESSAGE_FROM_STORE, { groupId: activeUser.groupId }).reply()
+        const message = rpcService.decode(res)
+        console.log('Read message ', message);
+        if (message)
+          dispatch(addMessageInBatchs(message));
+      }
+    }
+    const generateHash = async () => {
+      const groupIdHash = store.getState()?.chat?.groupIdHash;
+      if (groupIdHash !== null) return
 
+      const res = await rpcService.send(GENERATE_HASH, { groupId: activeUser.groupId }).reply()
+      const result = rpcService.decode(res)
+      console.log('topic hash', result.hash);
+      dispatch(setGroupIdHash(result.hash))
+    }
     if (activeUser && activeUser.groupId) {
+      generateHash()
       rpcService.onRequest(RECEIVE_MESSAGE, (data: any) => {
         console.log('data recveid from peer', data)
         if (Array.isArray(data)) {
@@ -37,23 +47,26 @@ export const useChat = () => {
       rpcService.onRequest(RPC_LOG, (data: any) => console.log(data));
       rpcService.send(JOIN_GROUP, activeUser);
       rpcService.onRequest(UPDATE_PEER_CONNECTION, (data) => {
+        const groupIdHash = store.getState()?.chat?.groupIdHash;
         console.log('peer connection', data)
         if (data.length) {
-          const status = new Map(data).get(activeUser.groupId)
+          const status = new Map(data).get(groupIdHash)
+          console.log('status', status);
           setConnection(status);
         }
       })
     }
+
     readMessage()
+
     return () => {
       rpcService.send(LEAVE_GROUP, activeUser)
     };
   }, [activeUser, dispatch]);
 
 
-  useEffect(() => {
-
-  }, [])
+  // useEffect(() => {
+  // }, [])
 
   const sendMessage = async () => {
     if (!text.trim()) return;

@@ -8,7 +8,7 @@ import b4a from 'b4a';
 import Pear from 'bare-process'; // or global `Pear` (if auto-injected)
 import { generateHash } from './crypto.mjs';
 import RPCManager from './IPC.mjs';
-import { CREATE_GROUP, FETCH_GROUP_DETAILS, JOIN_GROUP, LEAVE_GROUP, READ_MESSAGE_FROM_STORE, RECEIVE_MESSAGE, SEND_MESSAGE, UPDATE_PEER_CONNECTION } from './rpc-commands.mjs';
+import { CREATE_GROUP, FETCH_GROUP_DETAILS, GENERATE_HASH, JOIN_GROUP, LEAVE_GROUP, READ_MESSAGE_FROM_STORE, RECEIVE_MESSAGE, SEND_MESSAGE, UPDATE_PEER_CONNECTION } from './rpc-commands.mjs';
 import { closeStore, createGroup, getAllGroupDetails, readMessagesFromStore, writeMessagesToStore } from './store.mjs';
 const swarm = new Hyperswarm()
 const { IPC } = BareKit
@@ -49,9 +49,9 @@ swarm.on('connection', (peer, info) => {
   peer.on('data', message => {
     // const base64= b4a.toString(message, 'utf8')
     // const m = decryptWithPrivateKey(base64)
-    print('Received message from peer:', message)
+    print(`Received message from peer:`, message)
     sendMessageToUI(message);
-    writeMessagesToStore(message, 'peer')
+    writeMessagesToStore(RPC.decode(message), 'peer')
 
   })
 
@@ -71,14 +71,14 @@ swarm.on('update', () => {
 })
 
 swarm.on('network-update', (data) => {
-  print('network-update', data)
+  print(`network-update`, data)
 })
 swarm.on('network-change', (data) => {
-  print('network-change', data)
+  print(`network-change`, data)
 
 })
 swarm.on('persistent', (data) => {
-  print('persistent', data)
+  print(`persistent`, data)
 
 })
 
@@ -116,6 +116,11 @@ RPC.onRequest(RECEIVE_MESSAGE, (data) => {
 RPC.onRequest(READ_MESSAGE_FROM_STORE, (data) => {
   print(`[Command:READ_MESSAGE_FROM_STORE] sending message to peer:`, data);
   return readMessagesFromStore(data)
+});
+
+RPC.onRequest(GENERATE_HASH, ({ groupId }) => {
+  print(`[Command:GENERATE_HASH] sending message to back to UI :`, groupId);
+  return generateHash(groupId)
 });
 
 

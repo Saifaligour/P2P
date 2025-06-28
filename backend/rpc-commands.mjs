@@ -8,7 +8,7 @@ export const SEND_MESSAGE = 6;
 export const RECEIVE_MESSAGE = 6;
 export const READ_MESSAGE_FROM_STORE = 7;
 export const UPDATE_PEER_CONNECTION = 8;
-
+export const GENERATE_HASH = 9
 
 
 
