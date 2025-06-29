@@ -49,13 +49,13 @@ swarm.on('connection', (peer, info) => {
   peer.on('data', message => {
     // const base64= b4a.toString(message, 'utf8')
     // const m = decryptWithPrivateKey(base64)
-    print(`Received message from peer:`, message)
+    print(`RECEIVED_MESSAGE_FROM_PEER`, `Received message from peer:`, message)
     sendMessageToUI(message);
     writeMessagesToStore(RPC.decode(message), 'peer')
 
   })
 
-  peer.on('error', e => print(`Connection error: ${e}`))
+  peer.on('error', e => print(`[PEER ERROR]]:`, `Connection error: ${e}`))
 })
 
 swarm.on('update', () => {
@@ -64,7 +64,7 @@ swarm.on('update', () => {
     const current = topicPeersMap.get(e).size
     const total = swarm.connections.size;
     peer.push([e, { current, total }])
-    print(`Peers: connections  total :${total}, current: ${current}`)
+    print(`[RECEIVED_UPDATE_FROM_PEER]`, `Peers: connections  total :${total}, current: ${current}`)
   }
 
   RPC.send(UPDATE_PEER_CONNECTION, peer)
@@ -83,43 +83,43 @@ swarm.on('persistent', (data) => {
 })
 
 RPC.onRequest(FETCH_GROUP_DETAILS, async () => {
-  print(`[Command:FETCH_GROUP_DETAILS] Fetch group details from store`);
+  print(`[Command:FETCH_GROUP_DETAILS]`, `Fetch group details from store`);
   // Sending back to UI 
   return getAllGroupDetails()
 });
 
 RPC.onRequest(CREATE_GROUP, async (group) => {
-  print(`[Command:CREATE_GROUP] Creating new group`);
+  print(`[Command:CREATE_GROUP]`, `Creating new group`);
   // Sending back to UI
   return createGroup(group)
 });
 
 RPC.onRequest(JOIN_GROUP, ({ groupId }) => {
   const topic = generateHash(groupId)
-  print(`[Command:JOIN_GROUP] Joining chat Room:`, topic);
+  print(`[Command:JOIN_GROUP]`, `Joining chat Room:`, topic);
   joinGroup(topic.buffer);
 });
 
 RPC.onRequest(LEAVE_GROUP, ({ groupId }) => {
   const topic = generateHash(groupId)
-  print(`[Command:LEAVE_GROUP] Leaving chat Room: ${topic}`);
+  print(`[Command:LEAVE_GROUP]`, `Leaving chat Room: ${topic}`);
   swarm.leave(topic.buffer)
 });
 
 RPC.onRequest(RECEIVE_MESSAGE, (data) => {
-  print(`[Command:RECEIVE_MESSAGE] sending message to peer and writing in store`);
+  print(`[Command:RECEIVE_MESSAGE]`, `sending message to peer and writing in store`);
   sendMsgToPeer(data);
   writeMessagesToStore(data, 'currentUser')
 
 });
 
 RPC.onRequest(READ_MESSAGE_FROM_STORE, (data) => {
-  print(`[Command:READ_MESSAGE_FROM_STORE] sending message to peer:`, data);
+  print(`[Command:READ_MESSAGE_FROM_STORE]`, `sending message to peer:`, data);
   return readMessagesFromStore(data)
 });
 
 RPC.onRequest(GENERATE_HASH, ({ groupId }) => {
-  print(`[Command:GENERATE_HASH] sending message to back to UI :`, groupId);
+  print(`[Command:GENERATE_HASH]`, `sending message to back to UI :`, groupId);
   return generateHash(groupId)
 });
 
@@ -141,7 +141,7 @@ function sendMsgToPeer(message) {
 
   const peers = topicPeersMap.get(topic)
   if (!peers) {
-    print(`No peers found for topic ${message[0].groupId}`)
+    print(`[NO_PEER_FOUND]`, `No peers found for topic ${message[0].groupId}`)
     return
   }
 
@@ -149,7 +149,7 @@ function sendMsgToPeer(message) {
     try {
       peer.write(JSON.stringify(message))
     } catch (err) {
-      console.error('Failed to send message to peer:', err)
+      print(`[FAILED_TO_SEND]`, `Failed to send message to peer:`, err)
     }
   }
 }

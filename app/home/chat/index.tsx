@@ -2,7 +2,9 @@ import { BackButton } from '@/components/ui/BackButton';
 import { useChat } from '@/hooks/useChat';
 import { styles } from '@/style/ChatStyles';
 import { Ionicons } from '@expo/vector-icons';
+import { useHeaderHeight } from "@react-navigation/elements";
 import React, { memo, useRef } from 'react';
+
 import {
   FlatList,
   KeyboardAvoidingView,
@@ -148,6 +150,8 @@ InputBar.displayName = "InputBar";
 const ChatScreen = () => {
   const flatListRef = useRef(null);
   const { messages, text, setText, sendMessage, activeUser, connection } = useChat();
+  const headerHeightValue = useHeaderHeight();
+  const headerHeight = Platform.OS === "ios" ? headerHeightValue : 0;
 
   return (
     <SafeAreaView style={styles.container}>
@@ -156,8 +160,8 @@ const ChatScreen = () => {
 
       <KeyboardAvoidingView
         style={{ flex: 1 }}
-        behavior={Platform.OS === 'ios' ? 'padding' : 'padding'}
-        keyboardVerticalOffset={90}
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+        keyboardVerticalOffset={headerHeight}
       >
         <MessageList
           messages={messages}

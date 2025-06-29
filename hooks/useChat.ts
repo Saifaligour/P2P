@@ -17,8 +17,7 @@ export const useChat = () => {
   useEffect(() => {
     const readMessage = async () => {
       if (activeUser && activeUser.groupId && messages.length === 0) {
-        const res = await rpcService.send(READ_MESSAGE_FROM_STORE, { groupId: activeUser.groupId, reverse: true }).reply()
-        const message = rpcService.decode(res)
+        const message = await rpcService.send(READ_MESSAGE_FROM_STORE, { groupId: activeUser.groupId, reverse: true }).reply()
         console.log('Read message ', message);
         if (message)
           dispatch(loadMessages(message));
@@ -28,8 +27,7 @@ export const useChat = () => {
       const groupIdHash = store.getState()?.chat?.groupIdHash;
       if (groupIdHash !== null) return
 
-      const res = await rpcService.send(GENERATE_HASH, { groupId: activeUser.groupId }).reply()
-      const result = rpcService.decode(res)
+      const result = await rpcService.send(GENERATE_HASH, { groupId: activeUser.groupId }).reply()
       console.log('topic hash', result.hash);
       dispatch(setGroupIdHash(result.hash))
     }

@@ -1,6 +1,7 @@
 import b4a from 'b4a';
 import RPC from 'bare-rpc';
 import { RPC_LOG } from './rpc-commands.mjs';
+
 class RPCManager {
     static instance;
     static IPC = null
@@ -31,15 +32,15 @@ class RPCManager {
             const handler = this.requestHandlers.get(command);
             if (handler) {
                 try {
-                    this.log('[IPC]', `Indide backend RPC handler method ${command}`)
+                    this.log('[IPC]', '[_initIfNeeded]', `Inside backend RPC handler method ${command}`)
                     const msg = this.decode(data)
-                    this.log(`[IPC] received message from UI`, msg)
+                    this.log('[IPC]', '[_initIfNeeded]', `Received message from UI`, msg)
                     const result = await handler(msg);
                     const reply = this.encode(result)
                     req.reply(reply);
-                    this.log(`[IPC] replying back to UI`, reply)
+                    this.log('[IPC]', '[_initIfNeeded]', `Replying back to UI`, reply)
                 } catch (err) {
-                    this.log('[IPC]', `Handler error for command ${command}:`, err.message);
+                    this.log('[IPC]', '[_initIfNeeded]', `Handler error for command ${command}:`, err.message);
                     req.reply(this.encode({ error: err.message }));
                 }
             }
@@ -48,10 +49,10 @@ class RPCManager {
             if (subs) {
                 for (const fn of subs) {
                     try {
-                        this.log('[IPC]', `Inside subscriber funcaiotn call for loop command ${command}`);
+                        this.log('[IPC]', '[_initIfNeeded]', `Inside subscriber function call for loop command ${command}`);
                         fn(data);
                     } catch (e) {
-                        this.log('[IPC]', `Subscriber error for command ${command}`, e);
+                        this.log('[IPC]', '[_initIfNeeded]', `Subscriber error for command ${command}`, e);
                     }
                 }
             }
@@ -90,23 +91,66 @@ class RPCManager {
 
     send(command, data) {
         this._initIfNeeded();
-        if (!this.rpc) this.log('[IPC]', 'RPC not initialized.');
+        if (!this.rpc) this.log('[IPC]', '[send]', 'RPC not initialized.');
 
         const req = this.rpc.request(command);
         req.send(this.encode(data));
         return req;
     }
 
+    colorText(text, color, options = {}) {
+        const colors = {
+            black: '\x1b[30m',
+            reset: '\x1b[0m',
+            red: '\x1b[31m',
+            green: '\x1b[32m',
+            yellow: '\x1b[33m',
+            blue: '\x1b[34m',
+            magenta: '\x1b[35m',
+            cyan: '\x1b[36m',
+            white: '\x1b[37m',
+            gray: '\x1b[90m',
+        };
+
+        const command = {
+            0: "cyan",
+            1: "red",
+            2: "green",
+            3: "yellow",
+            5: "red",
+            4: "black",
+            6: "magenta",
+            7: "white",
+            8: "gray",
+        }
+
+        const bold = options.bold ? '\x1b[1m' : '';
+        const colorCode = colors[command[color]] || colors.reset;
+        const reset = colors.reset;
+
+        return `${bold}${colorCode}${text}${reset}`;
+    }
+
     log(...args) {
-        const prod = false
+        const prod = true
         console.log(...args)
         if (prod) {
             this._initIfNeeded();
-            if (!this.rpc) this.log('[IPC]', 'RPC not initialized.');
+            if (!this.rpc) this.log('[IPC]', '[log]', 'RPC not initialized.');
+            args.unshift('Backend Logs:')
+            const payload = args.map((arg, i) => {
+                if (b4a.isBuffer(arg) || arg instanceof Uint8Array) {
+                    arg = b4a.toString(arg, 'utf-8')
+                }
+                if (i <= 2)
+                    return this.colorText(arg, i);
+                else
+                    return arg
+            });
+            payload.push('\n')
 
-            const payload = args.map(arg => this.decode(arg));
             const req = this.rpc.request(RPC_LOG);
-            req.send(JSON.stringify(payload));
+            req.send(JSON.stringify(payload.join(',')));
         }
     }
 

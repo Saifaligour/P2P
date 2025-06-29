@@ -1,7 +1,6 @@
 
-import { Slot } from "expo-router";
-
 import store from "@/Redux/store"; // Adjust path accordingly
+import { Slot } from "expo-router";
 import React from "react";
 import { Provider } from "react-redux";
 

@@ -2,6 +2,7 @@ import b4a from 'b4a';
 import RPC from 'bare-rpc';
 import type { Duplex } from 'bare-stream';
 import { documentDirectory } from 'expo-file-system';
+import { Platform } from 'react-native';
 import { Worklet } from 'react-native-bare-kit';
 import bundle from './app.bundle.mjs';
 
@@ -30,7 +31,7 @@ class RPCManager {
     if (this.initialized) return;
 
     this.worklet = new Worklet();
-    this.worklet.start('/app.bundle', bundle, [String(documentDirectory)]);
+    this.worklet.start('/app.bundle', bundle, [String(documentDirectory), Platform.OS, `{"dev":true}`]);
     const { IPC } = this.worklet;
 
     this.rpc = new RPC(IPC as Duplex, async (req) => {
@@ -100,7 +101,12 @@ class RPCManager {
 
     const req = this.rpc.request(command);
     req.send(this.encode(data));
-    return req;
+    return {
+      reply: async () => {
+        const reply = await req.reply();
+        return this.decode(reply)
+      }
+    }
   }
 
   public stop() {
