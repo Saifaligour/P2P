@@ -142,6 +142,9 @@ class RPCManager {
                 if (b4a.isBuffer(arg) || arg instanceof Uint8Array) {
                     arg = b4a.toString(arg, 'utf-8')
                 }
+                if (Array.isArray(arg)) {
+                    arg = JSON.stringify(arg)
+                }
                 if (i <= 2)
                     return this.colorText(arg, i);
                 else

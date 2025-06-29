@@ -147,10 +147,9 @@ export async function writeMessagesToStore(messages, from) {
         print(`[writeMessagesToStore]`, `No messages to write`);
         return [];
     }
-    console.log(messages);
     const groupId = messages[0].groupId;
     try {
-        print(`[writeMessagesToStore]`, `Writing ${messages.length} messages to group ${groupId}`);
+        print(`[writeMessagesToStore]`, `Writing ${messages.length} messages to group ${groupId}`, messages);
         const base = await initAutobase(groupId);
         console.log('Autobase size', autobaseCache.size);
 

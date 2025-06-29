@@ -46,9 +46,9 @@ export const useChat = () => {
       rpcService.send(JOIN_GROUP, activeUser);
       rpcService.onRequest(UPDATE_PEER_CONNECTION, (data) => {
         const groupIdHash = store.getState()?.chat?.groupIdHash;
+        const status = data[groupIdHash]
         console.log('peer connection', data)
-        if (data.length) {
-          const status = new Map(data).get(groupIdHash)
+        if (Object.keys(data).length > 0 && status) {
           console.log('status', status);
           setConnection(status);
         }

@@ -34,22 +34,28 @@ Pear.on('exit', () => {
 
 swarm.on('connection', (peer, info) => {
   const topics = info?.topics || []
+  const peerCount = {};
   for (const topicBuffer of topics) {
     const topicHex = b4a.toString(topicBuffer, 'hex')
     if (!topicPeersMap.has(topicHex)) {
       topicPeersMap.set(topicHex, new Set())
     }
-    topicPeersMap.get(topicHex).add(peer)
-
+    const topic = topicPeersMap.get(topicHex);
+    topic.add(peer);
+    const current = topic.size;
+    const total = swarm.connections.size;
+    peerCount[topicHex] = { current, total };
     peer.on('close', () => {
       topicPeersMap.get(topicHex)?.delete(peer)
     })
   }
+  print(`NEW_PEER _CONNECTED`, `New peer connection received`)
+  RPC.send(UPDATE_PEER_CONNECTION, peerCount)
 
   peer.on('data', message => {
     // const base64= b4a.toString(message, 'utf8')
     // const m = decryptWithPrivateKey(base64)
-    print(`RECEIVED_MESSAGE_FROM_PEER`, `Received message from peer:`, message)
+    print(`[RECEIVED_MESSAGE_FROM_PEER]`, `Received message from peer:`, message)
     sendMessageToUI(message);
     writeMessagesToStore(RPC.decode(message), 'peer')
 
@@ -59,15 +65,7 @@ swarm.on('connection', (peer, info) => {
 })
 
 swarm.on('update', () => {
-  const peer = [];
-  for (const e of topicPeersMap.keys()) {
-    const current = topicPeersMap.get(e).size
-    const total = swarm.connections.size;
-    peer.push([e, { current, total }])
-    print(`[RECEIVED_UPDATE_FROM_PEER]`, `Peers: connections  total :${total}, current: ${current}`)
-  }
-
-  RPC.send(UPDATE_PEER_CONNECTION, peer)
+  // print(`[RECEIVED_UPDATE_FROM_PEER]`, `Peers: connections`)
 })
 
 swarm.on('network-update', (data) => {
