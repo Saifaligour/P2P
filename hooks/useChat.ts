@@ -2,6 +2,7 @@ import { GENERATE_HASH, JOIN_GROUP, LEAVE_GROUP, READ_MESSAGE_FROM_STORE, RECEIV
 import { rpcService } from '@/hooks/RPC';
 import { addMessage, addMessageInBatchs, loadMessages, setActiveUser, setGroupIdHash } from '@/Redux/chatReducer';
 import store, { RootState } from '@/Redux/store';
+import { formatLogs } from '@/utils/helpter';
 import { useEffect, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 
@@ -42,7 +43,7 @@ export const useChat = () => {
         }
       });
 
-      rpcService.onRequest(RPC_LOG, (data: any) => console.log(data));
+      rpcService.onRequest(RPC_LOG, (data: any) => formatLogs(data));
       rpcService.send(JOIN_GROUP, activeUser);
       rpcService.onRequest(UPDATE_PEER_CONNECTION, (data) => {
         const groupIdHash = store.getState()?.chat?.groupIdHash;

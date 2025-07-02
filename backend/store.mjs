@@ -9,16 +9,16 @@ import RPCManager from './IPC.mjs';
 
 const { IPC } = BareKit;
 const [path, platform, env] = Bare?.argv;
-const RPC = RPCManager.getInstance(IPC)
+const RPC = RPCManager.getInstance(IPC);
 const META_GROUP = 'group_details';
 let store = null;
-// Cache for autobase instances
 const autobaseCache = new Map();
-const print = (...args) => {
-    RPC.log('[store.js]', ...args);
+const print = (args) => {
+    args.file = 'store.js'
+    RPC.log(args);
 };
-const ENV = JSON.parse(env) || { dev: true }
-print('ENV :', Bare?.argv);
+const ENV = JSON.parse(env) || { dev: true };
+print({ method: 'JSON.parse', message: `Bare env data`, data: Bare?.argv });
 const __dirname = (ENV.dev && platform === 'ios') ? fileURLToPath(`file:///Volumes/Home/practice/P2P/P2P/`) : fileURLToPath(path);
 const STORAGE_PATH = join(__dirname, ENV.dev ? `${platform}_store` : 'store');
 
@@ -33,32 +33,31 @@ const STORAGE_PATH = join(__dirname, ENV.dev ? `${platform}_store` : 'store');
 
 if (!fs.existsSync(STORAGE_PATH)) fs.mkdirSync(STORAGE_PATH, { recursive: true });
 
-async function initStore() {
+export async function initStore() {
     if (!store) {
         try {
-            print(`[initStore]`, `Initializing Corestore at ${STORAGE_PATH}`);
-            // Disable replication to prevent data sharing with peers
-            store = new Corestore(STORAGE_PATH, { lock: true, replicate: false });
-            print(`[initStore]`, `Corestore instance created`);
+            print({ method: 'initStore', message: `Initializing Corestore at ${STORAGE_PATH}` });
+            store = new Corestore(STORAGE_PATH, { lock: true, replicate: true });
+            print({ method: 'initStore', message: `Corestore instance created` });
             await store.ready();
-            print(`[initStore]`, `Corestore initialized successfully`);
+            print({ method: 'initStore', message: `Corestore initialized successfully` });
         } catch (error) {
-            print(`[initStore]`, `Failed to initialize Corestore: ${error.message}, Stack: ${error.stack}`);
+            print({ method: 'initStore', message: 'Failed to initialize Corestore', error });
             if (error.message.includes('No locks available')) {
-                print(`[initStore]`, `Lock conflict detected. Attempting to clear lock file.`);
+                print({ method: 'initStore', message: 'Lock conflict detected. Attempting to clear lock file.' });
                 try {
                     const lockFile = join(STORAGE_PATH, 'db', 'LOCK');
                     if (fs.existsSync(lockFile)) {
                         fs.unlinkSync(lockFile);
-                        print(`[initStore]`, `Lock file removed. Retrying Corestore initialization.`);
-                        store = new Corestore(STORAGE_PATH, { lock: true, replicate: false });
+                        print({ method: 'initStore', message: 'Lock file removed. Retrying Corestore initialization.' });
+                        store = new Corestore(STORAGE_PATH, { lock: true, replicate: true });
                         await store.ready();
-                        print(`[initStore]`, `Corestore initialized after clearing lock`);
+                        print({ method: 'initStore', message: 'Corestore initialized after clearing lock' });
                     } else {
                         throw new Error(`Lock file not found, but lock error persists`);
                     }
                 } catch (retryError) {
-                    print(`[initStore]`, `Retry failed: ${retryError.message}, Stack: ${retryError.stack}`);
+                    print({ method: 'initStore', message: 'Retry failed', error: retryError });
                     throw retryError;
                 }
             } else {
@@ -70,23 +69,20 @@ async function initStore() {
 }
 
 export async function initAutobase(uniqueId) {
-    print(`[initAutobase]`, `autobase cache size : ${autobaseCache.size}`)
-    // Check cache first
+    print({ method: 'initAutobase', message: `autobase cache size: ${autobaseCache.size}` });
+
     if (autobaseCache.has(uniqueId)) {
         const cached = autobaseCache.get(uniqueId);
         if (cached) {
-            print(`[initAutobase]`, `Returning cached autobase for group ${uniqueId}`);
+            print({ method: 'initAutobase', message: `Returning cached autobase for ${uniqueId}` });
             await cached.ready();
             return cached;
         }
     }
 
     try {
-        print(`[initAutobase]`, `Creating autobase for group ${uniqueId}`);
+        print({ method: 'initAutobase', message: `Creating autobase for ${uniqueId}` });
         const store = await initStore();
-        print(`[initAutobase]`, `Group core created for ${uniqueId}`);
-        print(`[initAutobase]`, `Group core ready for ${uniqueId}`);
-
         const s = store.namespace(uniqueId);
         const base = new Autobase(s, {
             valueEncoding: 'json',
@@ -97,15 +93,12 @@ export async function initAutobase(uniqueId) {
                 }
             }
         });
-        print(`[initAutobase]`, `Autobase instance created for group ${uniqueId}`);
-        print(`[initAutobase]`, `Autobase cache created for group ${uniqueId}`);
-        // Cache the autobase instance
         autobaseCache.set(uniqueId, base);
         await base.ready();
-        print(`[initAutobase]`, `Autobase created successfully for group ${uniqueId}`);
+        print({ method: 'initAutobase', message: `Autobase created and ready for ${uniqueId}` });
         return base;
     } catch (error) {
-        print(`[initAutobase]`, `Failed to create autobase for group ${uniqueId}: ${error.message}, Stack: ${error.stack}`);
+        print({ method: 'initAutobase', message: `Failed to create autobase for ${uniqueId}`, error });
         throw error;
     }
 }
@@ -113,16 +106,8 @@ export async function initAutobase(uniqueId) {
 export async function createGroup(group) {
     const { groupId } = group;
     try {
-        print(`[createGroup]`, `Creating group ${groupId}`);
+        print({ method: 'createGroup', message: `Creating group ${groupId}` });
         const metaBase = await initAutobase(META_GROUP);
-
-        // for await (const entry of metaBase.view.createReadStream()) {
-        //     if (entry.value?.groupId === groupId && !entry.value?.deleted) {
-        //       print(`Group ${groupId} already exists`);
-        //         throw new Error(`Group ${groupId} already exists`);
-        //     }
-        // }
-
         const metadata = {
             ...group,
             latestMessage: null,
@@ -130,47 +115,35 @@ export async function createGroup(group) {
             totalMessages: 0,
             latestTimestamp: 0,
         };
-
         await metaBase.append(metadata);
-        print(`[createGroup]`, `Metadata appended for group ${groupId}`);
-        // await initAutobase(groupId);
-        // print(`Group ${groupId} created successfully`);
+        print({ method: 'createGroup', message: `Metadata appended for group ${groupId}` });
         return metadata;
     } catch (error) {
-        print(`[createGroup]`, `Failed to create group ${groupId}: ${error.message}, Stack: ${error.stack}`);
+        print({ method: 'createGroup', message: `Failed to create group ${groupId}`, error });
         throw error;
     }
 }
 
 export async function writeMessagesToStore(messages, from) {
     if (!messages.length) {
-        print(`[writeMessagesToStore]`, `No messages to write`);
+        print({ method: 'writeMessagesToStore', message: 'No messages to write' });
         return [];
     }
     const groupId = messages[0].groupId;
     try {
-        print(`[writeMessagesToStore]`, `Writing ${messages.length} messages to group ${groupId}`, messages);
+        print({ method: 'writeMessagesToStore', message: `Writing ${messages.length} messages to group ${groupId}` });
         const base = await initAutobase(groupId);
-        console.log('Autobase size', autobaseCache.size);
-
         const seqNums = [];
         for (const msg of messages) {
-            msg.sender = from === 'peer' ? 'other' : 'me'
+            msg.sender = from === 'peer' ? 'other' : 'me';
             const seq = await base.append(msg);
-            print(`[writeMessagesToStore]`, `Message appended with seq ${seq} for group ${groupId}`);
+            print({ method: 'writeMessagesToStore', message: `Message appended with seq ${seq} for group ${groupId}` });
             seqNums.push(seq);
         }
-
-        // await updateGroupMetadata(groupId, {
-        //     messages: messages[messages.length - 1].text,
-        //     latestTimestamp: messages[messages.length - 1].timestamp,
-        //     totalMessages: base.view.length
-        // });
-
-        print(`[writeMessagesToStore]`, `Successfully wrote ${messages.length} messages to group ${groupId}`);
+        print({ method: 'writeMessagesToStore', message: `Successfully wrote ${messages.length} messages to group ${groupId}` });
         return seqNums;
     } catch (error) {
-        print(`[writeMessagesToStore]`, `Failed to write messages to group ${groupId}: ${error.message}, Stack: ${error.stack}`);
+        print({ method: 'writeMessagesToStore', message: `Failed to write messages to group ${groupId}`, error });
         throw error;
     }
 }
@@ -178,7 +151,7 @@ export async function writeMessagesToStore(messages, from) {
 export async function readMessagesFromStore(data) {
     const { groupId, limit = 100, reverse = false, ...opts } = data;
     try {
-        print(`[readMessagesFromStore]`, `Reading messages for group ${groupId} with options ${JSON.stringify(data)}`);
+        print({ method: 'readMessagesFromStore', message: `Reading messages for group ${groupId}` });
         const base = await initAutobase(groupId);
         const messages = [];
 
@@ -187,7 +160,6 @@ export async function readMessagesFromStore(data) {
         //     reverse,
         //     ...opts
         // });
-        print(`[readMessagesFromStore]`, `Created read stream for group ${groupId}`);
 
         // for await (const node of stream) {
         //     if (node) {
@@ -198,96 +170,87 @@ export async function readMessagesFromStore(data) {
         for (let i = 0; i < base.view.length; i++) {
             messages.push(await base.view.get(i));
         }
-
         const result = reverse ? messages : messages.reverse();
-        print(`[readMessagesFromStore]`, `Read ${result.length} messages for group ${groupId}`);
+        print({ method: 'readMessagesFromStore', message: `Read ${result.length} messages for group ${groupId}` });
         return result;
     } catch (error) {
-        print(`[readMessagesFromStore]`, `Failed to read messages for group ${groupId}: ${error.message}, Stack: ${error.stack}`);
+        print({ method: 'readMessagesFromStore', message: `Failed to read messages for group ${groupId}`, error });
         throw error;
     }
 }
 
-async function updateGroupMetadata(groupId, updates) {
+export async function updateGroupMetadata(groupId, updates) {
     try {
-        print(`[updateGroupMetadata]`, `Updating metadata for group ${groupId}`);
+        print({ method: 'updateGroupMetadata', message: `Updating metadata for group ${groupId}` });
         const metaBase = await initAutobase(META_GROUP);
         let current = {};
-
         const stream = metaBase.view.createReadStream();
-        print(`[updateGroupMetadata]`, `Created read stream for metadata update of group ${groupId}`);
+        print({ method: 'updateGroupMetadata', message: `Created read stream for metadata update of group ${groupId}` });
         for await (const entry of stream) {
             if (entry.value?.groupId === groupId && !entry.value?.deleted) {
                 current = entry.value;
-                print(`[updateGroupMetadata]`, `Found metadata for group ${groupId}`);
+                print({ method: 'updateGroupMetadata', message: `Found metadata for group ${groupId}` });
                 break;
             }
         }
-
         const updated = { ...current, ...updates };
         await metaBase.append(updated);
-        print(`[updateGroupMetadata]`, `Metadata updated for group ${groupId}`);
+        print({ method: 'updateGroupMetadata', message: `Metadata updated for group ${groupId}` });
         return updated;
     } catch (error) {
-        print(`[updateGroupMetadata]`, `Failed to update metadata for group ${groupId}: ${error.message}, Stack: ${error.stack}`);
+        print({ method: 'updateGroupMetadata', message: `Failed to update metadata for group ${groupId}`, error });
         throw error;
     }
 }
 
 export async function getGroupSummary(groupId, lastSeenTimestamp = 0) {
     try {
-        print(`[getGroupSummary]`, `Fetching summary for group ${groupId} with last seen ${lastSeenTimestamp}`);
+        print({ method: 'getGroupSummary', message: `Fetching summary for group ${groupId} with last seen ${lastSeenTimestamp}` });
         const metaBase = await initAutobase(META_GROUP);
         let metadata = null;
-
         const stream = metaBase.view.createReadStream();
-        print(`[getGroupSummary]`, `Created read stream for group summary of ${groupId}`);
+        print({ method: 'getGroupSummary', message: `Created read stream for group summary of ${groupId}` });
         for await (const entry of stream) {
             if (entry.value?.groupId === groupId && !entry.value?.deleted) {
                 metadata = entry.value;
-                print(`[getGroupSummary]`, `Found metadata for group ${groupId}`);
+                print({ method: 'getGroupSummary', message: `Found metadata for group ${groupId}` });
                 break;
             }
         }
-
         if (!metadata) {
-            print(`[getGroupSummary]`, `Group ${groupId} not found`);
+            print({ method: 'getGroupSummary', message: `Group ${groupId} not found` });
             return null;
         }
-
         const base = await initAutobase(groupId);
         let unreadCount = 0;
-
         if (lastSeenTimestamp) {
             const stream = base.view.createReadStream({ limit: 100, reverse: true });
-            print(`[getGroupSummary]`, `Created read stream for unread count of group ${groupId}`);
+            print({ method: 'getGroupSummary', message: `Created read stream for unread count of group ${groupId}` });
             for await (const node of stream) {
                 if (node.value?.timestamp > lastSeenTimestamp) unreadCount++;
                 else break;
             }
         }
-
         const result = {
             ...metadata,
             unreadCount,
             totalMessages: base.view.length
         };
-        print(`[getGroupSummary]`, `Fetched summary for group ${groupId} with ${unreadCount} unread messages`);
+        print({ method: 'getGroupSummary', message: `Fetched summary for group ${groupId} with ${unreadCount} unread messages` });
         return result;
     } catch (error) {
-        print(`[getGroupSummary]`, `Failed to fetch summary for group ${groupId}: ${error.message}, Stack: ${error.stack}`);
+        print({ method: 'getGroupSummary', message: `Failed to fetch summary for group ${groupId}`, error });
         throw error;
     }
 }
 
 export async function getAllGroupSummaries(lastSeenMap = {}) {
     try {
-        print(`[getAllGroupSummaries]`, `Fetching all group summaries`);
+        print({ method: 'getAllGroupSummaries', message: 'Fetching all group summaries' });
         const metaBase = await initAutobase(META_GROUP);
         const summaries = [];
-
         const stream = metaBase.view.createReadStream();
-        print(`[getAllGroupSummaries]`, `Created read stream for all group summaries`);
+        print({ method: 'getAllGroupSummaries', message: 'Created read stream for all group summaries' });
         for await (const entry of stream) {
             if (entry.value?.groupId && !entry.value?.deleted) {
                 const meta = entry.value;
@@ -297,92 +260,77 @@ export async function getAllGroupSummaries(lastSeenMap = {}) {
                         ? meta.latestTimestamp > lastSeenMap[meta.groupId] ? 1 : 0
                         : 0
                 });
-                print(`[getAllGroupSummaries]`, `Added summary for group ${meta.groupId}`);
+                print({ method: 'getAllGroupSummaries', message: `Added summary for group ${meta.groupId}` });
             }
         }
-
-        print(`[getAllGroupSummaries]`, `Fetched ${summaries.length} group summaries`);
+        print({ method: 'getAllGroupSummaries', message: `Fetched ${summaries.length} group summaries` });
         return summaries;
     } catch (error) {
-        print(`[getAllGroupSummaries]`, `Failed to fetch all group summaries: ${error.message}, Stack: ${error.stack}`);
+        print({ method: 'getAllGroupSummaries', message: 'Failed to fetch all group summaries', error });
         throw error;
     }
 }
 
 export async function getAllGroupDetails() {
     try {
-        print(`[getAllGroupDetails]`, `Fetching all group details`);
+        print({ method: 'getAllGroupDetails', message: 'Fetching all group details' });
         const metaBase = await initAutobase(META_GROUP);
         const details = [];
-
-        // const stream = metaBase.view.createReadStream();
-        print(`[getAllGroupDetails]`, `Created read stream for all group details`);
-        // for await (const entry of stream) {
-        //     if (entry.value?.groupId && !entry.value?.deleted) {
-        //         details.push(entry.value);
-        //       print(`Added details for group ${entry.value.groupId}`);
-        //     }
-        // }
         for (let i = 0; i < metaBase.view.length; i++) {
             details.push(await metaBase.view.get(i));
         }
-
-        print(`[getAllGroupDetails]`, `Fetched ${details.length} group details`);
+        print({ method: 'getAllGroupDetails', message: `Fetched ${details.length} group details` });
         return details;
     } catch (error) {
-        print(`[getAllGroupDetails]`, `Failed to fetch all group details: ${error.message}, Stack: ${error.stack}`);
+        print({ method: 'getAllGroupDetails', message: 'Failed to fetch all group details', error });
         throw error;
     }
 }
 
 export async function deleteGroup(groupId) {
     try {
-        print(`[deleteGroup]`, `Deleting group ${groupId}`);
+        print({ method: 'deleteGroup', message: `Deleting group ${groupId}` });
         const metaBase = await initAutobase(META_GROUP);
         await metaBase.append({ groupId, deleted: true });
-        print(`[deleteGroup]`, `Group ${groupId} deleted successfully`);
+        print({ method: 'deleteGroup', message: `Group ${groupId} deleted successfully` });
     } catch (error) {
-        print(`[deleteGroup]`, `Failed to delete group ${groupId}: ${error.message}, Stack: ${error.stack}`);
+        print({ method: 'deleteGroup', message: `Failed to delete group ${groupId}`, error });
         throw error;
     }
 }
 
 export async function cleanup() {
     try {
-        print(`[cleanup]`, `Starting cleanup`);
-        // Clear the autobase cache
+        print({ method: 'cleanup', message: 'Starting cleanup' });
         autobaseCache.clear();
-        print(`[cleanup]`, `Group meta base closed`);
         if (store) {
             await store.close();
             store = null;
-            print(`[cleanup]`, `Corestore closed`);
+            print({ method: 'cleanup', message: 'Corestore closed' });
         }
         if (fs.existsSync(STORAGE_PATH)) {
             fs.rmSync(STORAGE_PATH, { recursive: true, force: true });
-            print(`[cleanup]`, `Removed storage directory ${STORAGE_PATH}`);
+            print({ method: 'cleanup', message: `Removed storage directory ${STORAGE_PATH}` });
         }
-        print(`[cleanup]`, `Cleanup completed`);
+        print({ method: 'cleanup', message: 'Cleanup completed' });
     } catch (error) {
-        print(`[cleanup]`, `Failed to cleanup: ${error.message}, Stack: ${error.stack}`);
+        print({ method: 'cleanup', message: 'Failed to cleanup', error });
         throw error;
     }
 }
 
 export async function closeStore() {
     try {
-        print(`[closeStore]`, `Starting Closing`);
-        // Clear the autobase cache
+        print({ method: 'closeStore', message: 'Starting Closing' });
         autobaseCache.clear();
-
         if (store) {
             await store.close();
             store = null;
-            print(`[closeStore]`, `Corestore closed`);
+            print({ method: 'closeStore', message: 'Corestore closed' });
         }
-        print(`[closeStore]`, `Closing completed`);
+        print({ method: 'closeStore', message: 'Closing completed' });
     } catch (error) {
-        print(`[closeStore]`, `Failed to cleanup: ${error.message}, Stack: ${error.stack}`);
+        print({ method: 'closeStore', message: 'Failed to cleanup', error });
         throw error;
     }
 }

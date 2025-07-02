@@ -2,6 +2,7 @@ import { setActiveUser } from "@/Redux/chatReducer";
 import { setSearch, setUserList } from "@/Redux/userListReducer";
 import { addGroupDetails } from '@/backend/Api';
 import { FETCH_GROUP_DETAILS, RPC_LOG } from "@/backend/rpc-commands.mjs";
+import { formatLogs } from "@/utils/helpter";
 import { useRouter } from "expo-router";
 import { useEffect, useMemo } from "react";
 import { useDispatch, useSelector } from "react-redux";
@@ -76,7 +77,7 @@ export const useUserList = () => {
 
   }
   useEffect(() => {
-    rpcService.onRequest(RPC_LOG, (data: any) => console.log(data));
+    rpcService.onRequest(RPC_LOG, (data: any) => formatLogs(data));
 
     fetchList()
   }, [])

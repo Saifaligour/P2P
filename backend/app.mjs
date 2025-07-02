@@ -1,160 +1,301 @@
-// For interactive documentation and code auto-completion in editor
 /** @typedef {import('pear-interface')} */
 
 /* global Pear */
-import Hyperswarm from 'hyperswarm'; // Module for P2P networking and connecting peers
-// import { decryptWithPrivateKey, encryptWithPublicKey } from './crypto';
 import b4a from 'b4a';
-import Pear from 'bare-process'; // or global `Pear` (if auto-injected)
+import Pear from 'bare-process';
+import Hyperswarm from 'hyperswarm';
 import { generateHash } from './crypto.mjs';
 import RPCManager from './IPC.mjs';
-import { CREATE_GROUP, FETCH_GROUP_DETAILS, GENERATE_HASH, JOIN_GROUP, LEAVE_GROUP, READ_MESSAGE_FROM_STORE, RECEIVE_MESSAGE, SEND_MESSAGE, UPDATE_PEER_CONNECTION } from './rpc-commands.mjs';
-import { closeStore, createGroup, getAllGroupDetails, readMessagesFromStore, writeMessagesToStore } from './store.mjs';
-const swarm = new Hyperswarm()
-const { IPC } = BareKit
-const RPC = RPCManager.getInstance(IPC)
-const topicPeersMap = new Map() // topicHex => Set of peers
+import {
+  CREATE_GROUP,
+  FETCH_GROUP_DETAILS,
+  GENERATE_HASH,
+  JOIN_GROUP,
+  LEAVE_GROUP,
+  READ_MESSAGE_FROM_STORE,
+  RECEIVE_MESSAGE,
+  SEND_MESSAGE,
+  UPDATE_PEER_CONNECTION
+} from './rpc-commands.mjs';
+import {
+  closeStore,
+  createGroup,
+  getAllGroupDetails,
+  initAutobase,
+  initStore,
+  readMessagesFromStore,
+  writeMessagesToStore
+} from './store.mjs';
 
-function print(...args) {
-  RPC.log('[app.js]', ...args);
+const swarm = new Hyperswarm();
+const { IPC } = BareKit;
+const RPC = RPCManager.getInstance(IPC);
+const topicPeersMap = new Map();
+const groupWriterCores = new Map();
+
+function print(args) {
+  args.file = 'app.js';
+  RPC.log(args);
 }
-// Unannounce the public key before exiting the process
-// (This is not a requirement, but it helps avoid DHT pollution)
 
 Pear.on('exit', () => {
-  console.log('------------- Pear on exit ----------------');
-  swarm.destroy()
-  closeStore()
-})
+  print({ method: 'exit', message: 'Pear process exiting, cleaning up.....................' });
+  swarm.destroy();
+  closeStore();
+});
 
 // Enable automatic reloading for the app
 // This is optional but helpful during production
 // updates(() => Pear.reload())
 
 
-swarm.on('connection', (peer, info) => {
-  const topics = info?.topics || []
+swarm.on('connection', async (peer, info) => {
+  const topics = info?.topics || [];
   const peerCount = {};
+  const store = await initStore();
+
   for (const topicBuffer of topics) {
-    const topicHex = b4a.toString(topicBuffer, 'hex')
+    const topicHex = b4a.toString(topicBuffer, 'hex');
+    const groupId = topicHex;
+
     if (!topicPeersMap.has(topicHex)) {
-      topicPeersMap.set(topicHex, new Set())
+      topicPeersMap.set(topicHex, new Set());
     }
-    const topic = topicPeersMap.get(topicHex);
-    topic.add(peer);
-    const current = topic.size;
-    const total = swarm.connections.size;
-    peerCount[topicHex] = { current, total };
+
+    const peersSet = topicPeersMap.get(topicHex);
+    peersSet.add(peer);
+    peerCount[topicHex] = { current: peersSet.size, total: swarm.connections.size };
+
     peer.on('close', () => {
-      topicPeersMap.get(topicHex)?.delete(peer)
-    })
+      peersSet.delete(peer);
+    });
+
+    const localWriterCore = await getWriterCoreForGroup(groupId);
+    const autobase = await initAutobase(groupId);
+    const allCores = autobase.inputs.concat(autobase.localInput);
+
+    for (const core of allCores) {
+      try {
+        core.replicate(peer, { live: true });
+        print({
+          method: 'swarm.connection',
+          command: 'REPLICATE',
+          message: `Started replication for core ${b4a.toString(core.key, 'hex')} in group ${groupId}`
+        });
+      } catch (error) {
+        print({
+          method: 'swarm.connection',
+          command: 'REPLICATE_ERROR',
+          error
+        });
+      }
+    }
+
+    if (localWriterCore) {
+      peer.write(JSON.stringify({
+        type: 'writerKey',
+        groupId,
+        key: b4a.toString(localWriterCore.key, 'hex')
+      }));
+    }
   }
-  print(`NEW_PEER _CONNECTED`, `New peer connection received`)
-  RPC.send(UPDATE_PEER_CONNECTION, peerCount)
 
-  peer.on('data', message => {
-    // const base64= b4a.toString(message, 'utf8')
-    // const m = decryptWithPrivateKey(base64)
-    print(`[RECEIVED_MESSAGE_FROM_PEER]`, `Received message from peer:`, message)
-    sendMessageToUI(message);
-    writeMessagesToStore(RPC.decode(message), 'peer')
+  peer.on('data', async (data) => {
+    let message;
+    try {
+      message = JSON.parse(data.toString());
+    } catch (e) {
+      print({
+        method: 'peer.on(data)',
+        command: 'INVALID_DATA',
+        message: `Failed to parse incoming data: ${data.toString()}`
+      });
+      return;
+    }
 
-  })
+    if (message.type === 'writerKey') {
+      const { groupId, key } = message;
+      await addRemoteWriter(groupId, key);
 
-  peer.on('error', e => print(`[PEER ERROR]]:`, `Connection error: ${e}`))
-})
+      const remoteCore = store.get({ key: b4a.from(key, 'hex') });
+      await remoteCore.ready();
+      remoteCore.replicate(peer, { live: true });
+      print({
+        method: 'peer.on(data)',
+        command: 'REMOTE_REPLICATE',
+        message: `Replicating remote writer ${key} for group ${groupId}`
+      });
+    } else {
+      print({
+        method: 'peer.on(data)',
+        command: 'RECEIVED_MESSAGE_FROM_PEER',
+        message: 'Received data from peers',
+        data: message
+      });
+      sendMessageToUI(message);
+      writeMessagesToStore(RPC.decode(message), 'peer');
+    }
+  });
+
+  peer.on('error', (error) => {
+    print({
+      method: 'peer.on(error)',
+      command: 'PEER_ERROR',
+      error
+    });
+  });
+
+  print({
+    method: 'swarm.on(connection)',
+    command: 'NEW_PEER_CONNECTED',
+    message: 'A new peer connected'
+  });
+
+  RPC.send(UPDATE_PEER_CONNECTION, peerCount);
+});
 
 swarm.on('update', () => {
-  // print(`[RECEIVED_UPDATE_FROM_PEER]`, `Peers: connections`)
-})
+  // print({ method: 'swarm.on(update)', command: 'UPDATE', message: 'Received peer update' });
+});
 
 swarm.on('network-update', (data) => {
-  print(`network-update`, data)
-})
+  print({ method: 'swarm.on(network-update)', command: 'NETWORK_UPDATE', message: 'network-update)' });
+});
+
 swarm.on('network-change', (data) => {
-  print(`network-change`, data)
+  print({ method: 'swarm.on(network-change)', command: 'NETWORK_CHANGE', message: 'network-change' });
+});
 
-})
 swarm.on('persistent', (data) => {
-  print(`persistent`, data)
-
-})
+  print({ method: 'swarm.on(persistent)', command: 'PERSISTENT', message: 'persistent' });
+});
 
 RPC.onRequest(FETCH_GROUP_DETAILS, async () => {
-  print(`[Command:FETCH_GROUP_DETAILS]`, `Fetch group details from store`);
-  // Sending back to UI 
-  return getAllGroupDetails()
+  print({
+    method: 'RPC.onRequest',
+    command: 'FETCH_GROUP_DETAILS',
+    message: 'Fetch group details from store'
+  });
+  return getAllGroupDetails();
 });
 
 RPC.onRequest(CREATE_GROUP, async (group) => {
-  print(`[Command:CREATE_GROUP]`, `Creating new group`);
-  // Sending back to UI
-  return createGroup(group)
+  print({
+    method: 'RPC.onRequest',
+    command: 'CREATE_GROUP',
+    message: 'Creating new group'
+  });
+  return createGroup(group);
 });
 
-RPC.onRequest(JOIN_GROUP, ({ groupId }) => {
-  const topic = generateHash(groupId)
-  print(`[Command:JOIN_GROUP]`, `Joining chat Room:`, topic);
-  joinGroup(topic.buffer);
+RPC.onRequest(JOIN_GROUP, async ({ groupId }) => {
+  const topic = generateHash(groupId);
+  print({
+    method: 'RPC.onRequest',
+    command: 'JOIN_GROUP',
+    message: `Joining chat Room: ${topic.hash}`
+  });
+  await joinGroup(topic.buffer);
+  await getWriterCoreForGroup(topic.hash);
 });
 
 RPC.onRequest(LEAVE_GROUP, ({ groupId }) => {
-  const topic = generateHash(groupId)
-  print(`[Command:LEAVE_GROUP]`, `Leaving chat Room: ${topic}`);
-  swarm.leave(topic.buffer)
+  const topic = generateHash(groupId);
+  print({
+    method: 'RPC.onRequest',
+    command: 'LEAVE_GROUP',
+    message: `Leaving chat Room: ${topic.hash}`
+  });
+  swarm.leave(topic.buffer);
+  groupWriterCores.delete(topic.hash);
 });
 
 RPC.onRequest(RECEIVE_MESSAGE, (data) => {
-  print(`[Command:RECEIVE_MESSAGE]`, `sending message to peer and writing in store`);
+  print({
+    method: 'RPC.onRequest',
+    command: 'RECEIVE_MESSAGE',
+    message: 'Sending message to peer and writing to store'
+  });
   sendMsgToPeer(data);
-  writeMessagesToStore(data, 'currentUser')
-
+  writeMessagesToStore(data, 'currentUser');
 });
 
 RPC.onRequest(READ_MESSAGE_FROM_STORE, (data) => {
-  print(`[Command:READ_MESSAGE_FROM_STORE]`, `sending message to peer:`, data);
-  return readMessagesFromStore(data)
+  print({
+    method: 'RPC.onRequest',
+    command: 'READ_MESSAGE_FROM_STORE',
+    message: `Reading messages from store for: ${JSON.stringify(data)}`
+  });
+  return readMessagesFromStore(data);
 });
 
 RPC.onRequest(GENERATE_HASH, ({ groupId }) => {
-  print(`[Command:GENERATE_HASH]`, `sending message to back to UI :`, groupId);
-  return generateHash(groupId)
+  print({
+    method: 'RPC.onRequest',
+    command: 'GENERATE_HASH',
+    message: `Generating hash for groupId: ${groupId}`
+  });
+  return generateHash(groupId);
 });
-
-
 
 async function joinGroup(topicBuffer) {
   // Unannounce the previous topic if any
   // if (swarm.discovery) {
   //   swarm.discovery.leave()
   // }
-  const discovery = swarm.join(topicBuffer, { client: true, server: true })
-  await discovery.flushed()
+  const discovery = swarm.join(topicBuffer, { client: true, server: true });
+  await discovery.flushed();
+}
 
+async function getWriterCoreForGroup(groupId) {
+  if (groupWriterCores.has(groupId)) return groupWriterCores.get(groupId);
+  const store = await initStore();
+  const writerCore = store.get(`writer-${groupId}`);
+  await writerCore.ready();
+  groupWriterCores.set(groupId, writerCore);
+  return writerCore;
+}
+
+async function addRemoteWriter(groupId, remoteKeyHex) {
+  const store = await initStore();
+  const remoteCore = store.get({ key: b4a.from(remoteKeyHex, 'hex') });
+  await remoteCore.ready();
+  const base = await initAutobase(groupId);
+  await base.addInput(remoteCore);
+  print({
+    method: 'addRemoteWriter',
+    command: 'ADD_REMOTE_WRITER',
+    message: `Added remote writer for group ${groupId}`
+  });
 }
 
 function sendMsgToPeer(message) {
   const topicBuffer = generateHash(message[0].groupId);
-  const topic = b4a.toString(topicBuffer, 'hex')
+  const topic = b4a.toString(topicBuffer, 'hex');
 
-  const peers = topicPeersMap.get(topic)
+  const peers = topicPeersMap.get(topic);
   if (!peers) {
-    print(`[NO_PEER_FOUND]`, `No peers found for topic ${message[0].groupId}`)
-    return
+    print({
+      method: 'sendMsgToPeer',
+      command: 'NO_PEER_FOUND',
+      message: `No peers found for topic ${message[0].groupId}`
+    });
+    return;
   }
 
   for (const peer of peers) {
     try {
-      peer.write(JSON.stringify(message))
-    } catch (err) {
-      print(`[FAILED_TO_SEND]`, `Failed to send message to peer:`, err)
+      peer.write(JSON.stringify(message));
+    } catch (error) {
+      print({
+        method: 'sendMsgToPeer',
+        command: 'FAILED_TO_SEND',
+        error
+      });
     }
   }
 }
 
 function sendMessageToUI(message) {
-  RPC.send(SEND_MESSAGE, message)
+  RPC.send(SEND_MESSAGE, message);
 }
-
-
-

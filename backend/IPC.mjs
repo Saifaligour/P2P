@@ -1,6 +1,6 @@
 import b4a from 'b4a';
 import RPC from 'bare-rpc';
-import { RPC_LOG } from './rpc-commands.mjs';
+import { getCommand, RPC_LOG } from './rpc-commands.mjs';
 
 class RPCManager {
     static instance;
@@ -32,16 +32,16 @@ class RPCManager {
             const handler = this.requestHandlers.get(command);
             if (handler) {
                 try {
-                    this.log('[IPC]', '[_initIfNeeded]', `Inside backend RPC handler method ${command}`)
-                    const msg = this.decode(data)
-                    this.log('[IPC]', '[_initIfNeeded]', `Received message from UI`, msg)
+                    this.log({ method: '_initIfNeeded', command: getCommand(command), message: 'Inside backend RPC handler method' });
+                    const msg = this.decode(data);
+                    this.log({ method: '_initIfNeeded', command: getCommand(command), message: 'Received message from UI', data: msg });
                     const result = await handler(msg);
-                    const reply = this.encode(result)
+                    const reply = this.encode(result);
                     req.reply(reply);
-                    this.log('[IPC]', '[_initIfNeeded]', `Replying back to UI`, reply)
-                } catch (err) {
-                    this.log('[IPC]', '[_initIfNeeded]', `Handler error for command ${command}:`, err.message);
-                    req.reply(this.encode({ error: err.message }));
+                    this.log({ method: '_initIfNeeded', command: getCommand(command), message: 'Replying back to UI', data: reply });
+                } catch (error) {
+                    this.log({ method: '_initIfNeeded', command: getCommand(command), message: 'Handler error', error });
+                    req.reply(this.encode({ command: getCommand(command), error }));
                 }
             }
 
@@ -49,15 +49,15 @@ class RPCManager {
             if (subs) {
                 for (const fn of subs) {
                     try {
-                        this.log('[IPC]', '[_initIfNeeded]', `Inside subscriber function call for loop command ${command}`);
+                        this.log({ method: '_initIfNeeded', command: getCommand(command), message: 'Inside subscriber function call for loop' });
                         fn(data);
-                    } catch (e) {
-                        this.log('[IPC]', '[_initIfNeeded]', `Subscriber error for command ${command}`, e);
+                    } catch (error) {
+                        this.log({ method: '_initIfNeeded', command: getCommand(command), message: 'Subscriber error', error });
                     }
                 }
             }
 
-            req.reply(this.encode({ staus: 'ok', 'message': 'data received' }));
+            req.reply(this.encode({ status: 'ok', message: 'data received' }));
         });
 
         this.initialized = true;
@@ -91,7 +91,7 @@ class RPCManager {
 
     send(command, data) {
         this._initIfNeeded();
-        if (!this.rpc) this.log('[IPC]', '[send]', 'RPC not initialized.');
+        if (!this.rpc) this.log({ method: 'send', message: 'RPC not initialized.' });
 
         const req = this.rpc.request(command);
         req.send(this.encode(data));
@@ -110,50 +110,46 @@ class RPCManager {
             cyan: '\x1b[36m',
             white: '\x1b[37m',
             gray: '\x1b[90m',
+            brightRed: '\x1b[91m',
+            brightGreen: '\x1b[92m',
+            brightYellow: '\x1b[93m',
+            brightBlue: '\x1b[94m',
+            brightPurple: '\x1b[95m', // alias
+            brightCyan: '\x1b[96m',
+            brightWhite: '\x1b[97m',
         };
 
-        const command = {
-            0: "cyan",
-            1: "red",
-            2: "green",
-            3: "yellow",
-            5: "red",
-            4: "black",
-            6: "magenta",
-            7: "white",
-            8: "gray",
-        }
-
         const bold = options.bold ? '\x1b[1m' : '';
-        const colorCode = colors[command[color]] || colors.reset;
+        const colorCode = colors[color] || colors.reset;
         const reset = colors.reset;
 
         return `${bold}${colorCode}${text}${reset}`;
     }
-
-    log(...args) {
-        const prod = true
-        console.log(...args)
+    formatLog(data) {
+        if (b4a.isBuffer(data) || data instanceof Uint8Array) {
+            return b4a.toString(data, 'utf-8')
+        }
+        else if (typeof data === 'string') {
+            return data
+        }
+        else {
+            return JSON.stringify(data, null, 2)
+        }
+    }
+    log(logObj) {
+        const prod = true;
+        console.log(logObj);
         if (prod) {
             this._initIfNeeded();
-            if (!this.rpc) this.log('[IPC]', '[log]', 'RPC not initialized.');
-            args.unshift('Backend Logs:')
-            const payload = args.map((arg, i) => {
-                if (b4a.isBuffer(arg) || arg instanceof Uint8Array) {
-                    arg = b4a.toString(arg, 'utf-8')
-                }
-                if (Array.isArray(arg)) {
-                    arg = JSON.stringify(arg)
-                }
-                if (i <= 2)
-                    return this.colorText(arg, i);
-                else
-                    return arg
-            });
-            payload.push('\n')
-
+            if (!this.rpc) this.log({ method: 'log', message: 'RPC not initialized.' });
+            logObj.source = this.colorText('Backend Logs', 'brightPurple');
+            logObj.file = this.colorText(logObj.file || 'IPC', 'cyan');
+            logObj.method = this.colorText(logObj.method, 'red');
+            logObj.command = this.colorText(logObj.command, 'green');
+            logObj.data = this.formatLog(logObj.data);
+            logObj.error = this.formatLog(logObj.error?.message)
             const req = this.rpc.request(RPC_LOG);
-            req.send(JSON.stringify(payload.join(',')));
+            req.send(JSON.stringify(logObj, null, 2));
         }
     }
 

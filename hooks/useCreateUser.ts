@@ -9,6 +9,7 @@ import {
 } from '@/Redux/createUserReducer';
 import store, { RootState } from '@/Redux/store';
 import { setUserList } from '@/Redux/userListReducer';
+import { formatLogs } from '@/utils/helpter';
 import { useRouter } from 'expo-router';
 import { useEffect } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
@@ -71,7 +72,7 @@ export const useCreateUser = () => {
     }
   };
   useEffect(() => {
-    rpcService.onRequest(RPC_LOG, (data: any) => console.log(data));
+    rpcService.onRequest(RPC_LOG, (data: any) => formatLogs(data));
 
   }, [])
   return {
