@@ -1,5 +1,5 @@
 import { fetchGroupDetails } from '@/backend/Api';
-import { CREATE_GROUP, RPC_LOG } from '@/backend/rpc-commands.mjs';
+import { CREATE_GROUP, RPC_LOG } from '@/constants/command.mjs';
 import { rpcService } from '@/hooks/RPC';
 import {
   resetCreateUser,

@@ -39,5 +39,4 @@ yarn-error.*
 # @end expo-cli
 ios
 android
-ios_store
-android_store
+*db*/**

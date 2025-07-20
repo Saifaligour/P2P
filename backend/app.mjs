@@ -4,8 +4,6 @@
 import b4a from 'b4a';
 import Pear from 'bare-process';
 import Hyperswarm from 'hyperswarm';
-import { generateHash } from './crypto.mjs';
-import RPCManager from './IPC.mjs';
 import {
   CREATE_GROUP,
   FETCH_GROUP_DETAILS,
@@ -16,16 +14,10 @@ import {
   RECEIVE_MESSAGE,
   SEND_MESSAGE,
   UPDATE_PEER_CONNECTION
-} from './rpc-commands.mjs';
-import {
-  closeStore,
-  createGroup,
-  getAllGroupDetails,
-  initAutobase,
-  initStore,
-  readMessagesFromStore,
-  writeMessagesToStore
-} from './store.mjs';
+} from '../constants/command.mjs';
+import { generateHash } from './crypto.mjs';
+import RPCManager from './IPC.mjs';
+import StoreManager from './store.mjs';
 
 const swarm = new Hyperswarm();
 const { IPC } = BareKit;
@@ -42,7 +34,7 @@ Pear.on('exit', () => {
   print('exit', null, 'Pear process exiting, cleaning up.....................');
   try {
     swarm.destroy();
-    closeStore();
+    StoreManager.closeStore();
   } catch (error) {
     print('exit', 'CLEANUP_ERROR', error);
   }
@@ -62,7 +54,7 @@ async function handleNewPeerConnection(peer, info) {
 
   const topics = (info?.topics || []).map(buf => b4a.toString(buf, 'hex'));
   const peerCount = {};
-  const store = await initStore();
+  const store = await StoreManager.initStore();
 
   await Promise.all(
     topics.map(async groupId => {
@@ -99,7 +91,7 @@ function trackPeerInTopic(groupId, peer, peerCount) {
 }
 
 async function replicateAllCoresToPeer(groupId, peer) {
-  const autobase = await initAutobase(groupId);
+  const autobase = await StoreManager.initAutobase(groupId);
   const cores = [...autobase.inputs, autobase.localInput];
 
   for (const core of cores) {
@@ -134,7 +126,7 @@ function attachDataHandler(peer, store) {
       } else {
         print('peer.on(data)', 'RECEIVED_MESSAGE', 'Data from peer', msg);
         sendMessageToUI(msg);
-        await writeMessagesToStore(RPC.decode(msg), 'peer');
+        await StoreManager.writeMessagesToStore(RPC.decode(msg), 'peer');
       }
     } catch (err) {
       print('peer.on(data)', 'DATA_ERROR', `Couldn’t process: ${raw}`, null, err);
@@ -160,10 +152,10 @@ async function handleRemoteWriter({ groupId, key }, peer, store) {
 
 async function addRemoteWriter(groupId, remoteKeyHex) {
   try {
-    const store = await initStore();
+    const store = await StoreManager.initStore();
     const remoteCore = store.get({ key: b4a.from(remoteKeyHex, 'hex') });
     await remoteCore.ready();
-    const base = await initAutobase(groupId);
+    const base = await StoreManager.initAutobase(groupId);
     await base.addInput(remoteCore);
     print('addRemoteWriter', 'ADD_REMOTE_WRITER', `Added remote writer for group ${groupId}`);
   } catch (error) {
@@ -178,7 +170,7 @@ async function getWriterCoreForGroup(groupId) {
       print('getWriterCoreForGroup', 'CACHE_HIT', `Using cached writer core for group ${groupId}`);
       return groupWriterCores.get(groupId);
     }
-    const store = await initStore();
+    const store = await StoreManager.initStore();
     const writerCore = store.namespace(groupId);
     await writerCore.ready();
     groupWriterCores.set(groupId, writerCore);
@@ -194,7 +186,7 @@ async function getWriterCoreForGroup(groupId) {
 RPC.onRequest(FETCH_GROUP_DETAILS, async () => {
   try {
     print('RPC.onRequest', 'FETCH_GROUP_DETAILS', 'Fetch group details from store');
-    return await getAllGroupDetails();
+    return await StoreManager.getAllGroupDetails();
   } catch (error) {
     print('RPC.onRequest', 'FETCH_GROUP_DETAILS_ERROR', error);
     throw error;
@@ -204,7 +196,7 @@ RPC.onRequest(FETCH_GROUP_DETAILS, async () => {
 RPC.onRequest(CREATE_GROUP, async (group) => {
   try {
     print('RPC.onRequest', 'CREATE_GROUP', 'Creating new group');
-    return await createGroup(group);
+    return await StoreManager.createGroup(group);
   } catch (error) {
     print('RPC.onRequest', 'CREATE_GROUP_ERROR', error);
     throw error;
@@ -239,7 +231,7 @@ RPC.onRequest(RECEIVE_MESSAGE, (data) => {
   try {
     print('RPC.onRequest', 'RECEIVE_MESSAGE', 'Sending message to peer and writing to store');
     sendMsgToPeer(data);
-    writeMessagesToStore(data, 'currentUser');
+    StoreManager.writeMessagesToStore(data, 'currentUser');
   } catch (error) {
     print('RPC.onRequest', 'RECEIVE_MESSAGE_ERROR', error);
     throw error;
@@ -249,7 +241,7 @@ RPC.onRequest(RECEIVE_MESSAGE, (data) => {
 RPC.onRequest(READ_MESSAGE_FROM_STORE, async (data) => {
   try {
     print('RPC.onRequest', 'READ_MESSAGE_FROM_STORE', `Reading messages from store for: ${JSON.stringify(data)}`);
-    return await readMessagesFromStore(data);
+    return await StoreManager.readMessagesFromStore(data);
   } catch (error) {
     print('RPC.onRequest', 'READ_MESSAGE_FROM_STORE_ERROR', error);
     throw error;

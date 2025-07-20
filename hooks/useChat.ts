@@ -1,4 +1,4 @@
-import { GENERATE_HASH, JOIN_GROUP, LEAVE_GROUP, READ_MESSAGE_FROM_STORE, RECEIVE_MESSAGE, RPC_LOG, SEND_MESSAGE, UPDATE_PEER_CONNECTION } from '@/backend/rpc-commands.mjs';
+import { GENERATE_HASH, JOIN_GROUP, LEAVE_GROUP, READ_MESSAGE_FROM_STORE, RECEIVE_MESSAGE, RPC_LOG, SEND_MESSAGE, UPDATE_PEER_CONNECTION } from '@/constants/command.mjs';
 import { rpcService } from '@/hooks/RPC';
 import { addMessage, addMessageInBatchs, loadMessages, setActiveUser, setGroupIdHash } from '@/Redux/chatReducer';
 import store, { RootState } from '@/Redux/store';

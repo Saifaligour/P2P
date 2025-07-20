@@ -1,6 +1,6 @@
 import b4a from 'b4a';
 import RPC from 'bare-rpc';
-import { getCommand, RPC_LOG } from './rpc-commands.mjs';
+import { getCommand, RPC_LOG } from '../constants/command.mjs';
 
 class RPCManager {
     static instance;

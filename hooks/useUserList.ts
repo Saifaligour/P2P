@@ -1,7 +1,7 @@
 import { setActiveUser } from "@/Redux/chatReducer";
 import { setSearch, setUserList } from "@/Redux/userListReducer";
 import { addGroupDetails } from '@/backend/Api';
-import { FETCH_GROUP_DETAILS, RPC_LOG } from "@/backend/rpc-commands.mjs";
+import { FETCH_GROUP_DETAILS, RPC_LOG } from '@/constants/command.mjs';
 import { formatLogs } from "@/utils/helpter";
 import { useRouter } from "expo-router";
 import { useEffect, useMemo } from "react";

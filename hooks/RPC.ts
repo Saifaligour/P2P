@@ -8,7 +8,6 @@ import bundle from './app.bundle.mjs';
 
 type EventHandler = (data: any) => void;
 type RequestHandler = (data: any) => Promise<any> | any;
-
 class RPCManager {
   private static instance: RPCManager;
   private rpc: RPC | null = null;
