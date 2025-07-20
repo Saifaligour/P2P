@@ -1,6 +1,5 @@
 import { setActiveUser } from "@/Redux/chatReducer";
 import { setSearch, setUserList } from "@/Redux/userListReducer";
-import { addGroupDetails } from '@/backend/Api';
 import { FETCH_GROUP_DETAILS, RPC_LOG } from '@/constants/command.mjs';
 import { formatLogs } from "@/utils/helpter";
 import { useRouter } from "expo-router";
@@ -53,17 +52,6 @@ export const useUserList = () => {
     router.push("/home/UserScreen/createGroup");
   };
 
-
-  const addGroup = async (groupDetails) => {
-    try {
-      await addGroupDetails(groupDetails); // send to server
-    } catch (e) {
-      // Optionally handle error (e.g., show feedback)
-      console.error('Failed to add group to server:', e);
-    }
-    dispatch(setUserList([groupDetails, ...users]));
-  };
-
   const handleSearchChange = (text: string) => {
     dispatch(setSearch(text));
   };
@@ -88,6 +76,5 @@ export const useUserList = () => {
     handleSearchChange,
     handleOpenChat,
     handleCreateGroup,
-    addGroup,
   };
 };

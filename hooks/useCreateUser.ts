@@ -1,4 +1,3 @@
-import { fetchGroupDetails } from '@/backend/Api';
 import { CREATE_GROUP, RPC_LOG } from '@/constants/command.mjs';
 import { rpcService } from '@/hooks/RPC';
 import {
@@ -59,18 +58,7 @@ export const useCreateUser = () => {
 
   };
 
-  const joinGroup = async (groupId: string) => {
-    try {
-      const group = await fetchGroupDetails(groupId);
-      if (group) {
-        addGroup(group);
-        goBack();
-      }
-    } catch (error) {
-      // Optionally handle error (e.g., show feedback)
-      console.error('Failed to join group:', error);
-    }
-  };
+
   useEffect(() => {
     rpcService.onRequest(RPC_LOG, (data: any) => formatLogs(data));
 
@@ -84,6 +72,5 @@ export const useCreateUser = () => {
     updateGroupDP,
     reset,
     submitGroup,
-    joinGroup,
   };
 };
