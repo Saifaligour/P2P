@@ -8,7 +8,8 @@ const COMMANDS = {
     RECEIVE_MESSAGE: 6,
     READ_MESSAGE_FROM_STORE: 7,
     UPDATE_PEER_CONNECTION: 8,
-    GENERATE_HASH: 9
+    GENERATE_HASH: 9,
+    REGISTER_USER: 10,
 };
 
 // Dynamically export all keys
@@ -22,7 +23,8 @@ export const {
     RECEIVE_MESSAGE,
     READ_MESSAGE_FROM_STORE,
     UPDATE_PEER_CONNECTION,
-    GENERATE_HASH
+    GENERATE_HASH,
+    REGISTER_USER,
 } = COMMANDS;
 
 export function getCommand(value) {
