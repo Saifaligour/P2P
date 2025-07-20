@@ -76,16 +76,12 @@ export async function decryptWithPrivateKey(privateKey, encryptedData) {
  */
 export const generateHash = (input, algorithm = 'SHA256') => {
 
-    const inputBuffer = typeof input === 'string'
-        ? b4a.from(input)
-        : input
-
     // Create hash
-    const hash = createHash(algorithm).update(inputBuffer).digest()
+    const buffer = createHash(algorithm).update(input).digest()
     // Return as Uint8Array (32 bytes for SHA256)
     return {
-        buffer: hash,
+        buffer,
         topic: input,
-        hash: b4a.toString(hash, 'hex')
+        hash: b4a.toString(buffer, 'hex')
     }
 }
