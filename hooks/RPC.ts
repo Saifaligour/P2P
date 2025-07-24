@@ -17,7 +17,11 @@ class RPCManager {
   private subscriptions = new Map<number, Set<EventHandler>>();
   private requestHandlers = new Map<number, RequestHandler>();
 
-  private constructor() { }
+  private constructor() {
+    if (RPCManager.instance) return RPCManager.instance;
+    this.init();
+    RPCManager.instance = this;
+  }
 
   public static getInstance(): RPCManager {
     if (!RPCManager.instance) {
@@ -26,7 +30,7 @@ class RPCManager {
     return RPCManager.instance;
   }
 
-  private initIfNeeded() {
+  private init() {
     if (this.initialized) return;
 
     this.worklet = new Worklet();
@@ -68,7 +72,6 @@ class RPCManager {
   }
 
   public subscribe(command: number, handler: EventHandler): () => void {
-    this.initIfNeeded();
 
     if (!this.subscriptions.has(command)) {
       this.subscriptions.set(command, new Set());
@@ -85,17 +88,14 @@ class RPCManager {
   }
 
   public onRequest(command: number, handler: RequestHandler) {
-    this.initIfNeeded();
     this.requestHandlers.set(command, handler);
   }
 
   public offRequest(command: number) {
-    this.initIfNeeded();
     this.requestHandlers.delete(command);
   }
 
   public send(command: number, data: any): any {
-    this.initIfNeeded();
     if (!this.rpc) throw new Error('RPC not initialized.');
 
     const req = this.rpc.request(command);

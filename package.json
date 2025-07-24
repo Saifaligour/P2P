@@ -15,7 +15,8 @@
     "doctor": "npx expo-doctor",
     "log": "log stream --level=debug --predicate \"subsystem == 'bare'\"",
     "build_android": "expo run:android --variant=release",
-    "build_ios": "expo run:ios --configuration Release --no-bundler"
+    "build_ios": "expo run:ios --configuration Release --no-bundler",
+    "dht": "npx hyperdht bootstrap"
   },
   "dependencies": {
     "@expo/vector-icons": "^14.1.0",

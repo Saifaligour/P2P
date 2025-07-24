@@ -3,8 +3,8 @@ import RPC from 'bare-rpc';
 import { getCommand, RPC_LOG } from '../constants/command.mjs';
 
 class RPCManager {
-    static instance;
-    static IPC = null
+    static instance = null;
+
     rpc = null;
     initialized = false;
 
@@ -12,38 +12,40 @@ class RPCManager {
     requestHandlers = new Map();
     fileName = import.meta.url;
 
-    constructor() { }
+    constructor() {
+        if (RPCManager.instance) return RPCManager.instance;
+        this.init();
+        RPCManager.instance = this;
+    }
 
-    static getInstance(IPC) {
+    static getInstance() {
         if (!RPCManager.instance) {
             RPCManager.instance = new RPCManager();
-        }
-        if (!RPCManager.IPC && IPC) {
-            RPCManager.IPC = IPC;
         }
         return RPCManager.instance;
     }
 
-    _initIfNeeded() {
+    init() {
         if (this.initialized) return;
 
-        this.rpc = new RPC(RPCManager.IPC, async (req) => {
+        this.rpc = new RPC(BareKit?.IPC, async (req) => {
             const { command, data } = req;
             const cmd = getCommand(command);
             const handler = this.requestHandlers.get(command);
 
             if (handler) {
                 try {
-                    this.log('IPC', '_initIfNeeded', cmd, 'Inside backend RPC handler method');
+                    this.log('IPC', 'handler', cmd, 'Handling request');
                     const msg = this.decode(data);
-                    this.log('IPC', '_initIfNeeded', cmd, 'Received message from UI', msg);
                     const result = await handler(msg);
                     const reply = this.encode(result);
                     req.reply(reply);
-                    this.log('IPC', '_initIfNeeded', cmd, 'Replying back to UI', reply);
+                    this.log('IPC', 'handler', cmd, 'Replied', reply);
+                    return;
                 } catch (error) {
-                    this.log('IPC', '_initIfNeeded', cmd, 'Handler error', error);
+                    this.log('IPC', 'handler', cmd, 'Handler error', error);
                     req.reply(this.encode({ command: cmd, error }));
+                    return;
                 }
             }
 
@@ -51,10 +53,9 @@ class RPCManager {
             if (subs) {
                 for (const fn of subs) {
                     try {
-                        this.log('IPC', '_initIfNeeded', cmd, 'Inside subscriber function call for loop');
                         fn(data);
                     } catch (error) {
-                        this.log('IPC', '_initIfNeeded', cmd, 'Subscriber error', error);
+                        this.log('IPC', 'subscriber', cmd, 'Subscriber error', error);
                     }
                 }
             }
@@ -66,7 +67,7 @@ class RPCManager {
     }
 
     subscribe(command, handler) {
-        this._initIfNeeded();
+        this.init();
 
         if (!this.subscriptions.has(command)) {
             this.subscriptions.set(command, new Set());
@@ -82,17 +83,17 @@ class RPCManager {
     }
 
     onRequest(command, handler) {
-        this._initIfNeeded();
+        this.init();
         this.requestHandlers.set(command, handler);
     }
 
     offRequest(command) {
-        this._initIfNeeded();
+        this.init();
         this.requestHandlers.delete(command);
     }
 
     send(command, data) {
-        this._initIfNeeded();
+        this.init();
         if (!this.rpc) this.log('IPC', 'send', getCommand(command), 'RPC not initialized.');
 
         const req = this.rpc.request(command);
@@ -147,7 +148,7 @@ class RPCManager {
         console.log(file, method, command, message, dataOrError || null);
 
         if (prod) {
-            this._initIfNeeded();
+            this.init();
             const logEntry = {
                 source: this.colorText('Backend Logs', 'brightPurple'),
                 file: this.colorText(file || 'IPC', 'cyan'),

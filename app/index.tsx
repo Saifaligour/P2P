@@ -4,11 +4,15 @@ import { useEffect } from "react";
 import { ActivityIndicator, StyleSheet, Text, View } from "react-native";
 
 export default function SplashScreen() {
-  useEffect(() => {
-      const isAuthenticated = checkAuth();
+
+  async function isLogin() {
+    const isAuthenticated = await checkAuth();
     setTimeout(() => {
       router.replace(isAuthenticated ? "/home/UserScreen/groupList" : "/login");
     }, 500); // simulate splash
+  }
+  useEffect(() => {
+    isLogin()
   }, []);
 
   return (

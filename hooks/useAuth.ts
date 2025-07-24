@@ -1,8 +1,9 @@
 
-import { REGISTER_USER } from '@/constants/command.mjs';
+import { FETCH_USER_DETAILS, REGISTER_USER, RPC_LOG } from '@/constants/command.mjs';
 import { rpcService } from '@/hooks/RPC';
+import { formatLogs } from '@/utils/helpter';
 import { router } from 'expo-router';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 
 let isLoggedIn = false;
 
@@ -36,7 +37,7 @@ export const useAuth = () => {
     try {
       const res = await rpcService.send(REGISTER_USER, credentials).reply()
       if (res.status) {
-        router.navigate('/home/chat');
+        router.replace('/home/UserScreen/groupList');
       }
       return true;
     } catch {
@@ -46,7 +47,10 @@ export const useAuth = () => {
       setLoading(false);
     }
   };
+  useEffect(() => {
+    rpcService.onRequest(RPC_LOG, (data: any) => formatLogs(data));
 
+  }, [])
   return {
     credentials,
     loading,
@@ -56,7 +60,8 @@ export const useAuth = () => {
   };
 };
 
-export const checkAuth = (): boolean => {
-  return isLoggedIn;
+export const checkAuth = async (): Promise<boolean> => {
+  const res = await rpcService.send(FETCH_USER_DETAILS, {}).reply()
+  return res.data.name;
 };
 
