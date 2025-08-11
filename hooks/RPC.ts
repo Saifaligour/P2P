@@ -1,3 +1,4 @@
+import { getCommand } from '@/constants/command.mjs';
 import b4a from 'b4a';
 import RPC from 'bare-rpc';
 import type { Duplex } from 'bare-stream';
@@ -39,8 +40,9 @@ class RPCManager {
 
     this.rpc = new RPC(IPC as Duplex, async (req) => {
       const { command, data } = req;
-
-      let payload = this.decode(data)
+      const cmd = getCommand(command)
+      console.log('Received RPC request:', cmd);
+      let payload = this.decode(data, cmd)
       // 1. Handle request/response if handler is registered
       const handler = this.requestHandlers.get(command);
       if (handler) {
@@ -97,13 +99,14 @@ class RPCManager {
 
   public send(command: number, data: any): any {
     if (!this.rpc) throw new Error('RPC not initialized.');
-
+    const cmd = getCommand(command);
+    console.log('Sending RPC request:', cmd);
     const req = this.rpc.request(command);
     req.send(this.encode(data));
     return {
       reply: async () => {
         const reply = await req.reply();
-        return this.decode(reply)
+        return this.decode(reply, cmd);
       }
     }
   }
@@ -120,7 +123,8 @@ class RPCManager {
 
     this.initialized = false;
   }
-  decode = (data: any, format: BufferEncoding = 'utf8') => {
+  decode = (data: any, cmd, format: BufferEncoding = 'utf8') => {
+    console.log('Decoding RPC request:', cmd);
     if (b4a.isBuffer(data) || data instanceof Uint8Array) {
       return JSON.parse(b4a.toString(data, format))
     }

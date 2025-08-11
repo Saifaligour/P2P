@@ -5,8 +5,6 @@ import { formatLogs } from '@/utils/helpter';
 import { router } from 'expo-router';
 import { useEffect, useState } from 'react';
 
-let isLoggedIn = false;
-
 export const useAuth = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -35,13 +33,14 @@ export const useAuth = () => {
     setLoading(true);
 
     try {
-      const res = await rpcService.send(REGISTER_USER, credentials).reply()
-      if (res.status) {
+      const res = await rpcService.send(REGISTER_USER, credentials).reply();
+      if (res?.status) {
         router.replace('/home/UserScreen/groupList');
       }
       return true;
-    } catch {
+    } catch (error) {
       setError('Login failed');
+      console.error('Login error:', error);
       return false;
     } finally {
       setLoading(false);
@@ -61,7 +60,7 @@ export const useAuth = () => {
 };
 
 export const checkAuth = async (): Promise<boolean> => {
-  const res = await rpcService.send(FETCH_USER_DETAILS, {}).reply()
-  return res.data.name;
+  const res = await rpcService.send(FETCH_USER_DETAILS, {}).reply();
+  return res?.data?.name;
 };
 
