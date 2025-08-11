@@ -1,6 +1,6 @@
 
+import b4a from 'b4a'
 import Hyperbee from 'hyperbee'
-
 export default class View {
   constructor(verbose = false) {
     this.VERBOSE_LOGGING = verbose
@@ -16,17 +16,10 @@ export default class View {
     // console.log('Apply called with nodes:', nodes.length)
     for (const node of nodes) {
       const value = JSON.parse(node.value)
-
-      // DAG Entry Debug - show each operation in the MerkleDAG
-      const writerKey = node.from?.key?.toString('hex') || 'unknown'
-      const nodeIndex = node.length !== undefined ? node.length : 'unknown'
-      const dependencies = node.heads ? node.heads.length : 0
-      // console.log(`DAG Entry - Writer: ${writerKey.slice(0, 8)}... Index: ${nodeIndex} Dependencies: ${dependencies} Type: ${value?.message ? 'message' : value?.add ? 'add-writer' : value?.gets ? 'gets' : 'echo'}`)
-
       if (value.add) {
         if (this.VERBOSE_LOGGING) console.log('Processing add writer command for:', value.add)
         // Add as both writer AND indexer
-        await host.addWriter(Buffer.from(value.add, 'hex'), { indexer: true })
+        await host.addWriter(b4a.from(value.add, 'hex'), { indexer: true })
         if (this.VERBOSE_LOGGING) console.log('Writer and indexer added successfully:', value.add)
       }
 
