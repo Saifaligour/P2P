@@ -136,6 +136,7 @@ export default class NetworkManager {
     if (this.verbose) {
       console.log('Joining swarm with discovery key:', discoveryKey.toString('hex'))
     }
+    return DISK
   }
 
   destroy() {

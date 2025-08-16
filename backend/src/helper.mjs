@@ -36,6 +36,7 @@ const Invite = {
         if (i.key) c.fixed32.preencode(state, i.key)
         if (i.discoveryKey) c.fixed32.preencode(state, i.discoveryKey)
         if (i.expires) c.uint32.preencode(state, Math.floor(i.expires / 1000)) // store as secs
+        if (i.data) c.string.preencode(state, i.data);
     },
     encode(state, i) {
         c.uint.encode(state, 1) // version
@@ -44,6 +45,7 @@ const Invite = {
         if (i.key) c.fixed32.encode(state, i.key)
         if (i.discoveryKey) c.fixed32.encode(state, i.discoveryKey)
         if (i.expires) c.uint32.encode(state, Math.floor(i.expires / 1000))
+        if (i.data) c.string.encode(state, i.data);
     },
     decode(state) {
         const version = c.uint.decode(state)
@@ -53,20 +55,28 @@ const Invite = {
 
         const flags = c.uint.decode(state)
 
+        const seed = c.fixed32.decode(state);
+        const key = c.fixed32.decode(state);
+        const discoveryKey = (flags & 1) ? c.fixed32.decode(state) : null;
+        const expires = (flags & 2) ? c.uint32.decode(state) * 1000 : 0;
+        const sensitive = (flags & 4) !== 0;
+        const testInvitation = (flags & 8) !== 0;
+        let data = c.string.decode(state);
         return {
-            seed: c.fixed32.decode(state),
-            key: c.fixed32.decode(state),
-            discoveryKey: (flags & 1) ? c.fixed32.decode(state) : null,
-            expires: (flags & 2) ? c.uint32.decode(state) * 1000 : 0,
-            sensitive: (flags & 4) !== 0,
-            testInvitation: (flags & 8) !== 0
+            seed,
+            key,
+            discoveryKey,
+            expires,
+            sensitive,
+            testInvitation,
+            data
         }
     }
 }
 
 export function createInvite(opts = {}) {
     const {
-        data,
+        data = '{}',
         discoveryKey,
         sensitive = false,
         testInvitation = false,
@@ -75,8 +85,9 @@ export function createInvite(opts = {}) {
         expires = Date.now() + CONFIG.INVITE_EXPIRY_MS,
     } = opts
 
-    const encoded = z32.encode(c.encode(Invite, { seed, discoveryKey, key, expires, sensitive, testInvitation }))
-    console.log('Encoded invite:', encoded);
+    const inviteObj = { seed, discoveryKey, key, expires, sensitive, testInvitation, data };
+    const encoded = z32.encode(c.encode(Invite, inviteObj));
+    console.log('Encoded invite:', encoded, 'with data:', data);
     return encoded
 }
 

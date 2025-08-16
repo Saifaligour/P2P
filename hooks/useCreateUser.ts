@@ -1,4 +1,4 @@
-import { CREATE_GROUP, RPC_LOG } from '@/constants/command.mjs';
+import { CREATE_GROUP, JOIN_GROUP, RPC_LOG } from '@/constants/command.mjs';
 import { rpcService } from '@/hooks/RPC';
 import {
   resetCreateUser,
@@ -50,14 +50,20 @@ export const useCreateUser = () => {
       isAdmin: true,
       createdAt: new Date().toISOString(),
     }
-    addGroup(newGroup);
 
     reset();
     goBack();
-    rpcService.send(CREATE_GROUP, newGroup)
-
+    const res = await rpcService.send(CREATE_GROUP, newGroup).reply();
+    addGroup(res);
   };
 
+  const joinGroup = async (invite) => {
+    if (invite) {
+      const res = await rpcService.send(JOIN_GROUP, { invite }).reply();
+      console.log(res);
+      goBack();
+    }
+  }
 
   useEffect(() => {
     rpcService.onRequest(RPC_LOG, (data: any) => formatLogs(data));
@@ -72,5 +78,6 @@ export const useCreateUser = () => {
     updateGroupDP,
     reset,
     submitGroup,
+    joinGroup
   };
 };

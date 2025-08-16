@@ -1,12 +1,13 @@
 /** @typedef {import('pear-interface')} */ /* global Pear */
 
 import Autobase from 'autobase'
+import b4a from 'b4a'
 import fs from 'bare-fs'
 import { join } from 'bare-path'
 import { fileURLToPath } from 'bare-url'
 import Corestore from 'corestore'
 import Hyperbee from 'hyperbee'
-import { CREATE_GROUP, CREATE_INVITE, FETCH_GROUP_DETAILS, FETCH_USER_DETAILS, READ_MESSAGE_FROM_STORE, REGISTER_USER, SEND_MESSAGE } from '../constants/command.mjs'
+import { CREATE_GROUP, CREATE_INVITE, FETCH_GROUP_DETAILS, FETCH_USER_DETAILS, JOIN_GROUP, READ_MESSAGE_FROM_STORE, REGISTER_USER, SEND_MESSAGE } from '../constants/command.mjs'
 import { GROUP_INFO, GROUP_STORE, USER_INFO, USER_STORE } from '../constants/index.mjs'
 import RPCManager from './IPC.mjs'
 import NetworkManager from './src/NetworkManager.mjs'
@@ -97,15 +98,22 @@ class App {
   }
 
   async createInviteHandler({ groupId }) {
-    const base = this.bases.get(groupId)
-    if (!base) throw new Error('Group not found')
-
-    const invite = createInvite({
-      seed: this.keyPair.publicKey,
-      discoveryKey: base.discoveryKey,
-      key: base.key
-    })
-    return invite
+    try {
+      const base = this.bases.get(groupId)
+      if (!base) throw new Error('Group not found')
+      const data = await base.view.get(groupId)
+      this.#log('createInvite', 'Creating invite for group', groupId, 'with data:', JSON.stringify(data));
+      const invite = createInvite({
+        seed: this.keyPair.publicKey,
+        discoveryKey: base.discoveryKey,
+        key: base.key,
+        data: JSON.stringify(data)
+      })
+      return { invite }
+    } catch (error) {
+      console.error('Error creating invite:', error);
+      return { error: error.message || 'Failed to create invite' };
+    }
   }
 
 
@@ -128,7 +136,7 @@ class App {
 
   async writeMessageHandler(messages) {
     console.log('new messages', messages.groupId);
-    const base = await this.bases.get(messages.groupId);
+    const base = this.bases.get(messages.groupId);
     if (base) {
       base.append(JSON.stringify(messages));
     }
@@ -137,13 +145,29 @@ class App {
     }
   }
 
-  async readMessageHandler({ groupId, start = 0, end = Infinity }) {
+  async readMessageHandler({ groupId, start = 0, end = -1 }) {
     const messages = [];
     try {
       const base = this.bases.get(groupId)
-      await base.view.update()
-      for await (const { seq, key, value } of base.view.createReadStream({ start, end })) {
-        if (key === groupId) continue; // Skip group metadata
+      if (!base) throw new Error('Group not found')
+      // const st = this.store.namespace(b4a.from('0e159d6eca63a7784d44b2fb7fdbdc892cc7ff7b99f4eb5e1b074d03c7616e11', 'hex'))
+      // await st.ready()
+      // const core = st.get(b4a.from('0e159d6eca63a7784d44b2fb7fdbdc892cc7ff7b99f4eb5e1b074d03c7616e11', 'hex'))
+      // await core.ready()
+      // for await (const v of core.createReadStream()) {
+      //   try {
+      //     console.log('decoding using b4a:', b4a.toString(v, 'utf-8'));
+      //     console.log('Reading message:', Node.decode(v));
+      //   } catch (error) {
+      //     console.error('Error reading message:', error);
+      //   }
+      // }
+      await base.view.ready()
+      for await (const { seq, key, value } of base.view.createReadStream()) {
+        if (key === groupId) {
+          console.log('Group metadata:', key, value);
+          continue; // Skip group metadata
+        }
         messages.push(value)
       }
       return messages;
@@ -174,37 +198,43 @@ class App {
     try {
       await this.storeManager.initDB(USER_INFO)
       const user = await this.storeManager.db.get(USER_INFO);
-      return { success: true, status: 200, message: 'User details fetched', data: user.value };
+      return { success: true, status: 200, message: 'User details fetched', data: user?.value };
     } catch (error) {
       this.#log('userDetail', 'Error fetching user details', error);
       return { success: false, status: 500, message: 'Internal error', error: error.message };
     }
   }
 
-  async joinGroupHandler(invite) {
+  async joinGroupHandler({ invite }) {
     const { key, discoveryKey } = decodeInvite(invite);
-    const base = new Autobase(this.store.namespace(key), key, new View())
-    if (base) {
-      const groupId = discoveryKey.toString('hex');
-      await base.ready()
-      const metadata = await base.view.get(groupId)
-      metadata.baseKey = key;
-      metadata.writerKey = base.local.key.toString('hex')
-      metadata.isAdmin = false;
-      metadata.groupAdmin = '<groupAdmin>';
+    try {
+      const base = new Autobase(this.store.namespace(key), key, new View())
+      if (base) {
+        await base.ready()
+        const groupId = b4a.toString(discoveryKey, 'hex');
+        this.networkManager.join(discoveryKey);
+        const metadata = {}
+        metadata.baseKey = b4a.toString(key, 'hex');
+        metadata.writerKey = b4a.toString(base.local.key, 'hex');
+        metadata.isAdmin = false;
+        metadata.groupAdmin = '<groupAdmin>';
+        metadata.groupId = groupId;
 
-      base.on('member-add', (key) => this.handleMemberAdd(key, groupId))
-      base.on('update', () => this.newMessageFromPeer(groupId))
+        base.on('member-add', (key) => this.handleMemberAdd(key, groupId))
+        base.on('update', () => this.newMessageFromPeer(groupId))
 
-      this.bases.set(groupId, base);
-      this.networkManager.join(base.discoveryKey);
-      this.storeManager.createGroups(metadata);
-
-    } else {
-      this.#log('joinGroup', 'Base not found for groupId', discoveryKey);
+        this.bases.set(groupId, base);
+        this.storeManager.createGroups(metadata);
+        return metadata;
+      } else {
+        this.#log('joinGroup', 'Base not found for groupId', discoveryKey);
+        return { error: 'Base not found for groupId', groupId: discoveryKey.toString('hex') };
+      }
+    } catch (error) {
+      this.#log('joinGroup', 'Error joining group', error);
+      return { error: error.message || 'Failed to join group' };
     }
   }
-
   async createGroupHandler(metadata) {
     try {
 
@@ -220,8 +250,10 @@ class App {
       metadata.latestTimestamp = 0
 
       metadata.groupId = groupId
-      base.append(JSON.stringify({ id: groupId, ...metadata }))
-
+      metadata.id = groupId
+      metadata.write = true;
+      await base.update();
+      base.append(JSON.stringify(metadata))
       metadata.writerKey = base.local.key.toString('hex')
       metadata.baseKey = baseKey.toString('hex')
       this.storeManager.createGroups(metadata)
@@ -271,6 +303,7 @@ class App {
     this.RPC.onRequest(READ_MESSAGE_FROM_STORE, this.readMessageHandler.bind(this));
     this.RPC.onRequest(SEND_MESSAGE, this.writeMessageHandler.bind(this));
     this.RPC.onRequest(CREATE_INVITE, this.createInviteHandler.bind(this));
+    this.RPC.onRequest(JOIN_GROUP, this.joinGroupHandler.bind(this));
   }
 
   #log(method, message, dataOrError = null) {
@@ -329,7 +362,7 @@ class Store {
     // eslint-disable-next-line no-undef
     const [_path, platform, env] = Bare?.argv;
     const ENV = JSON.parse(env) || { dev: true };
-    const __dirname = ENV.dev && platform === 'ios' ? fileURLToPath(`file:///Volumes/Home/practice/P2P/P2P/db`) : fileURLToPath(path);
+    const __dirname = ENV.dev && platform === 'ios' ? fileURLToPath(`file:///Volumes/Home/practice/P2P/P2P/db`) : fileURLToPath(_path);
     const PATH = join(__dirname, path);
     console.log('Store Path', PATH);
     return PATH

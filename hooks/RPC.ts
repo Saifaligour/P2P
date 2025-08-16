@@ -106,7 +106,9 @@ class RPCManager {
     return {
       reply: async () => {
         const reply = await req.reply();
-        return this.decode(reply, cmd);
+        const rep = this.decode(reply, cmd);
+        console.log('Received RPC reply:', cmd, rep);
+        return rep;
       }
     }
   }
