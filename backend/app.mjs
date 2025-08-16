@@ -8,10 +8,10 @@ import {
 import { CONFIG, parseArgs } from '../constants/config.mjs';
 import { GROUP_INFO, GROUP_STORE, USER_INFO, USER_STORE } from '../constants/index.mjs';
 import RPCManager from './IPC.mjs';
-import Crypto from './crypto.mjs';
-import NetworkManager from './src/NetworkManager.mjs';
 import Autobase from './src/autobase.mjs';
+import Crypto from './src/crypto.mjs';
 import { keyPair } from './src/helper.mjs';
+import NetworkManager from './src/NetworkManager.mjs';
 import Store from './src/store.mjs';
 class App {
   constructor() {
