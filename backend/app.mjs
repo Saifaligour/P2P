@@ -1,13 +1,12 @@
 /** @typedef {import('pear-interface')} */ /* global Pear */
 
 import Autobase from 'autobase'
-import b4a from 'b4a'
 import fs from 'bare-fs'
 import { join } from 'bare-path'
 import { fileURLToPath } from 'bare-url'
 import Corestore from 'corestore'
 import Hyperbee from 'hyperbee'
-import { CREATE_GROUP, FETCH_GROUP_DETAILS, FETCH_USER_DETAILS, REGISTER_USER } from '../constants/command.mjs'
+import { CREATE_GROUP, CREATE_INVITE, FETCH_GROUP_DETAILS, FETCH_USER_DETAILS, READ_MESSAGE_FROM_STORE, REGISTER_USER, SEND_MESSAGE } from '../constants/command.mjs'
 import { GROUP_INFO, GROUP_STORE, USER_INFO, USER_STORE } from '../constants/index.mjs'
 import RPCManager from './IPC.mjs'
 import NetworkManager from './src/NetworkManager.mjs'
@@ -17,7 +16,6 @@ import { createInvite, decodeInvite, keyPair } from './src/helper.mjs'
 
 class App {
   constructor() {
-    this.db = null;
     this.store = null;
     this.keyPair = null;
     this.networkManager = null;
@@ -34,7 +32,6 @@ class App {
     this.store = await this.storeManager.getStore(GROUP_STORE);
     this.initKeyPaire()
     this.#register();
-    this.setUpnetworkManager()
     this.initDB(GROUP_INFO)
 
     if (typeof Pear !== 'undefined') {
@@ -56,64 +53,24 @@ class App {
 
   async initDB(name) {
     await this.storeManager.initDB(name)
+    this.setUpnetworkManager()
     this.groups = await this.storeManager.fetchGroups()
-    this.groups.forEach(g => this.createGroup(g.groupName, g.baseKey, g.isAdmin, true))
-  }
-  /**
-   * Create a new group (Autobase)
-   */
-  async createGroup(groupId, autobaseKey, isAdmin, existingGroup, metadata = {}) {
-    const groupName = groupId;
-    let base
-    if (this.bases.has(groupId)) {
-      base = this.bases.get(groupId)
-    }
-    else {
-      if (!isAdmin)
-        autobaseKey = existingGroup ? autobaseKey : decodeInvite(autobaseKey)
-      const baseKey = (!isAdmin && autobaseKey) ? b4a.from(autobaseKey, 'hex') : (await Autobase.getLocalKey(this.store, { keyPair: this.keyPair, name: groupId }))
-      console.log(autobaseKey ? `Joined group by key ${baseKey.toString('hex')}` : `Create new base key ${baseKey.toString('hex')}`);
-
-      base = new Autobase(
-        this.store.namespace(baseKey),
-        baseKey,
-        new View(CONFIG.VERBOSE_LOGGING)
-      )
-
-      await base.ready()
-      groupId = base.discoveryKey.toString('hex')
-      this.bases.set(groupId, base)
-      const writerKey = base.local.key.toString('hex')
-      // Add group UI container
-      console.log('Base Autobase key', baseKey.toString('hex'));
-      console.log('Base base.key', base.key.toString('hex'));
-      console.log('Base base.local.key', writerKey);
-      console.log('Base base.discoveryKey', groupId);
-      if (!existingGroup)
-        this.storeManager.createGroups({ isAdmin, discoveryKey: groupId, groupName, writerKey, name: this.args.name, baseKey: baseKey.toString('hex'), ...metadata })
-      // this.uiManager.addGroupToList(groupId, writerKey, groupName)
-      this.networkManager.join(base.discoveryKey)
-
-    }
-    // this.uiManager.resetMessage()
-    // Attach Autobase events
-    base.on('member-add', (key) => this.handleMemberAdd(base, key, groupId))
-    base.on('update', () => this.loadExistingMessages(base, groupId))
-
-    // Writable state
-    if (base.writable) {
-      await this.handleWritable(groupId)
-    } else {
-      base.once('writable', () => this.handleWritable(groupId))
-    }
-
-    // Load existing messages
-    setTimeout(() => this.loadExistingMessages(base, groupId), CONFIG.MESSAGE_LOAD_DELAY)
+    this.groups.forEach(g => this.loadGroup(g))
   }
 
-  setUpnetworkManager() {
-    // Shared NetworkManager
-    this.networkManager = new NetworkManager(this.bases, this.db, {
+  async loadGroup(group) {
+    const base = new Autobase(this.store.namespace(group.baseKey), group.baseKey, new View())
+    await base.ready()
+    base.on('member-add', (key) => this.handleMemberAdd(key, group.groupId))
+    base.on('update', () => this.newMessageFromPeer(group.groupId))
+    this.bases.set(group.groupId, base)
+    this.networkManager.join(base.discoveryKey)
+
+  }
+
+  async setUpnetworkManager() {
+    const store = await this.storeManager.getStore(USER_STORE);
+    this.networkManager = new NetworkManager(this.bases, store, {
       verbose: CONFIG.VERBOSE_LOGGING,
       keyPair: this.keyPair,
       onPeerCountChange: (count, groupId) => {
@@ -125,8 +82,9 @@ class App {
 
   }
 
-  async handleMemberAdd(base, key, groupId) {
+  async handleMemberAdd(key, groupId) {
     console.log('New member added to group')
+    const base = this.bases.get(groupId)
     if (key.equals(base.local.key)) {
       setTimeout(() => {
         if (base.writable) this.handleWritable(groupId)
@@ -138,27 +96,7 @@ class App {
     // this.uiManager.setWritable(groupId, true)
   }
 
-  async sendMessage(groupId, messageData) {
-    const base = this.bases.get(groupId)
-    if (base) await base.append(JSON.stringify(messageData))
-  }
-
-  async loadExistingMessages(base, groupId) {
-    await base.view.ready()
-    await base.view.update()
-
-    for await (const { seq, value } of base.view.createReadStream({ live: true })) {
-      if (value.echo && value.echo.message) {
-        // this.uiManager.displayMessage(groupId, value.echo, seq)
-        console.log('Message:', value.echo.message);
-      } else if (value.echo && value.echo.add) {
-        // this.uiManager.addSystemMessage(groupId, { add: value.echo.add }, seq)
-        console.log('System Message:', value.echo.add);
-      }
-    }
-  }
-
-  async createInvite(groupId) {
+  async createInviteHandler({ groupId }) {
     const base = this.bases.get(groupId)
     if (!base) throw new Error('Group not found')
 
@@ -171,9 +109,52 @@ class App {
   }
 
 
+  async newMessageFromPeer(groupId) {
+    try {
+      const base = this.bases.get(groupId);
+      if (base) {
+        const len = base.length;
+        for await (const { seq, key, value } of base.view.createReadStream({ live: true })) {
+          if (key === groupId) continue; // Skip group metadata
+          console.log('New message from peer:', value);
+        }
+      }
+    } catch (error) {
+      this.#log('newMessageFromPeer', 'Error fetching new message from peer:', error);
+    }
+  }
+
   // RPC handlers
+
+  async writeMessageHandler(messages) {
+    console.log('new messages', messages.groupId);
+    const base = await this.bases.get(messages.groupId);
+    if (base) {
+      base.append(JSON.stringify(messages));
+    }
+    else {
+      this.#log('writeMessage', 'Base not found for groupId', this.bases, messages.groupId);
+    }
+  }
+
+  async readMessageHandler({ groupId, start = 0, end = Infinity }) {
+    const messages = [];
+    try {
+      const base = this.bases.get(groupId)
+      await base.view.update()
+      for await (const { seq, key, value } of base.view.createReadStream({ start, end })) {
+        if (key === groupId) continue; // Skip group metadata
+        messages.push(value)
+      }
+      return messages;
+    } catch (err) {
+      this.#log('readMessagesFromStore', 'Error reading messages', err);
+      return [];
+    }
+  }
+
   async registerUserHandler(user) {
-    this.#log('registerUser', 'Reg`istering user', user);
+    this.#log('registerUser', 'Registering user', user);
 
     try {
       await this.storeManager.initDB(USER_INFO)
@@ -200,55 +181,68 @@ class App {
     }
   }
 
-  async createGroupHandler(group) {
+  async joinGroupHandler(invite) {
+    const { key, discoveryKey } = decodeInvite(invite);
+    const base = new Autobase(this.store.namespace(key), key, new View())
+    if (base) {
+      const groupId = discoveryKey.toString('hex');
+      await base.ready()
+      const metadata = await base.view.get(groupId)
+      metadata.baseKey = key;
+      metadata.writerKey = base.local.key.toString('hex')
+      metadata.isAdmin = false;
+      metadata.groupAdmin = '<groupAdmin>';
+
+      base.on('member-add', (key) => this.handleMemberAdd(key, groupId))
+      base.on('update', () => this.newMessageFromPeer(groupId))
+
+      this.bases.set(groupId, base);
+      this.networkManager.join(base.discoveryKey);
+      this.storeManager.createGroups(metadata);
+
+    } else {
+      this.#log('joinGroup', 'Base not found for groupId', discoveryKey);
+    }
+  }
+
+  async createGroupHandler(metadata) {
     try {
-      const { groupId } = group;
-      const metadata = {
-        ...group,
-        latestMessage: null,
-        unreadCount: 0,
-        totalMessages: 0,
-        latestTimestamp: 0,
-      };
-      this.createGroup(groupId, undefined, true, false, metadata);
+
+      const baseKey = await Autobase.getLocalKey(this.store, { keyPair: this.keyPair, name: metadata.name })
+      const base = new Autobase(this.store.namespace(baseKey), baseKey, new View())
+      await base.ready()
+      const groupId = base.discoveryKey.toString('hex')
+
+
+      metadata.latestMessage = null
+      metadata.unreadCount = 0
+      metadata.totalMessages = 0
+      metadata.latestTimestamp = 0
+
+      metadata.groupId = groupId
+      base.append(JSON.stringify({ id: groupId, ...metadata }))
+
+      metadata.writerKey = base.local.key.toString('hex')
+      metadata.baseKey = baseKey.toString('hex')
+      this.storeManager.createGroups(metadata)
+
+      this.networkManager.join(base.discoveryKey)
+
+      base.on('member-add', (key) => this.handleMemberAdd(key, groupId))
+      base.on('update', () => this.newMessageFromPeer(groupId))
+
+      // Writable state
+      if (base.writable) {
+        await this.handleWritable(groupId)
+      } else {
+        base.once('writable', () => this.handleWritable(groupId))
+      }
+      this.bases.set(groupId, base)
       return metadata;
     } catch (error) {
       this.#log('createGroup', 'Failed to create group', error);
       return { success: false, message: 'Failed to create group', error: error.message };
     }
-  }
-
-  async writeMessagesToStore(messages, from) {
-    // if (!messages.length) return [];
-
-    // const groupId = messages[0].groupId;
-    // const db = await this.store.autoBase(groupId);
-    // const results = [];
-
-    // for (const msg of messages) {
-    //   msg.sender = from === 'peer' ? 'other' : 'me';
-    //   const seq = await db.put(msg.id, msg);
-    //   results.push(seq);
-    // }
-
-    // return results;
-  }
-
-  async readMessagesFromStore({ groupId, limit = 100, reverse = false }) {
-    // const db = await this.store.autoBase(groupId);
-    const messages = [];
-
-    try {
-      // const snapshot = db.snapshot();
-      // for await (const entry of snapshot.createReadStream({ limit, reverse })) {
-      //   messages.push(entry.value);
-      // }
-      // await snapshot.close();
-    } catch (err) {
-      this.#log('readMessagesFromStore', 'Error reading messages', err);
-    }
-
-    return reverse ? messages : messages.reverse();
   }
 
   async getGroupDetailsHandler() {
@@ -274,6 +268,9 @@ class App {
     this.RPC.onRequest(FETCH_USER_DETAILS, this.userDetailHandler.bind(this));
     this.RPC.onRequest(FETCH_GROUP_DETAILS, this.getGroupDetailsHandler.bind(this));
     this.RPC.onRequest(CREATE_GROUP, this.createGroupHandler.bind(this));
+    this.RPC.onRequest(READ_MESSAGE_FROM_STORE, this.readMessageHandler.bind(this));
+    this.RPC.onRequest(SEND_MESSAGE, this.writeMessageHandler.bind(this));
+    this.RPC.onRequest(CREATE_INVITE, this.createInviteHandler.bind(this));
   }
 
   #log(method, message, dataOrError = null) {
@@ -329,6 +326,7 @@ class Store {
   }
 
   getPath(path) {
+    // eslint-disable-next-line no-undef
     const [_path, platform, env] = Bare?.argv;
     const ENV = JSON.parse(env) || { dev: true };
     const __dirname = ENV.dev && platform === 'ios' ? fileURLToPath(`file:///Volumes/Home/practice/P2P/P2P/db`) : fileURLToPath(path);
@@ -351,12 +349,12 @@ class Store {
 
   async createGroups(groups) {
     await this.initDB(GROUP_INFO)
-    const existingGroup = await this.db.get(groups.groupName)
+    const existingGroup = await this.db.get(groups.groupId)
     if (existingGroup) {
       console.log('This group is alredy created ');
       return
     }
-    this.db.put(groups.groupName, JSON.stringify(groups))
+    this.db.put(groups.groupId, JSON.stringify(groups))
     console.log('create new group')
   }
 

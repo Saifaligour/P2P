@@ -2,12 +2,10 @@ const LOAD_MESSAGES = 'LOAD_MESSAGES';
 const ADD_MESSAGE = 'ADD_MESSAGE';
 const SET_ACTIVE_USER = 'SET_ACTIVE_USER';
 const ADD_MESSAGE_IN_BATCH = 'ADD_MESSAGE_IN_BATCH';
-const SET_GROUP_ID_HASH = 'SET_GROUP_ID_HASH';
 
 const initialState = {
   messages: [],
   activeUser: null,
-  groupIdHash: null
 };
 
 export const chatReducer = (state = initialState, action) => {
@@ -34,11 +32,6 @@ export const chatReducer = (state = initialState, action) => {
       return {
         ...state,
         activeUser: action.payload,
-      };
-    case SET_GROUP_ID_HASH:
-      return {
-        ...state,
-        groupIdHash: action.payload,
       };
 
     default:
@@ -68,8 +61,4 @@ export const setActiveUser = (user) => ({
   payload: user,
 });
 
-export const setGroupIdHash = (groupId) => ({
-  type: SET_GROUP_ID_HASH,
-  payload: groupId,
-});
 

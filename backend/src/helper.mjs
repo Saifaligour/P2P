@@ -75,13 +75,6 @@ export function createInvite(opts = {}) {
         expires = Date.now() + CONFIG.INVITE_EXPIRY_MS,
     } = opts
 
-    const additional = data
-        ? {
-            data,
-            signature: crypto.sign(data, SECRET_KEY)
-        }
-        : null
-
     const encoded = z32.encode(c.encode(Invite, { seed, discoveryKey, key, expires, sensitive, testInvitation }))
     console.log('Encoded invite:', encoded);
     return encoded
@@ -91,7 +84,7 @@ export function decodeInvite(invite) {
     const decodedInvite = z32.decode(invite)
     const decoded = c.decode(Invite, decodedInvite)
     console.log('Decoded invite:', decoded);
-    return decoded.key.toString('hex')
+    return decoded
 }
 
 

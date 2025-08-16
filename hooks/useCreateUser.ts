@@ -36,7 +36,6 @@ export const useCreateUser = () => {
     const isAvatarImage = !!groupDP;
     const newGroup = {
       id: Date.now().toString(),
-      groupId: groupName,
       name: groupName,
       message: groupDescription || '',
       descirption: groupDescription,
@@ -48,6 +47,7 @@ export const useCreateUser = () => {
       isGroup: true,
       members: [],
       groupAdmin: '',
+      isAdmin: true,
       createdAt: new Date().toISOString(),
     }
     addGroup(newGroup);

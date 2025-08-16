@@ -3,7 +3,7 @@ import b4a from 'b4a'
 
 export const CONFIG = {
   // Logging
-  VERBOSE_LOGGING: false, // Toggle detailed console output
+  VERBOSE_LOGGING: true, // Toggle detailed console output
 
   // Timing
   MESSAGE_LOAD_DELAY: 1000, // Delay before loading existing messages (ms)
@@ -57,8 +57,8 @@ export function parseArgs() {
   }
 }
 
-export const PUBLICK_KEY = b4a.alloc(32, args[0] || 'a' + 'asdjfnasdfj2412kjdasf21341kdjsdj824dnvyu23r1y2349132ur')
-export const SECRET_KEY = b4a.alloc(64, args[0] || 'a' + 'asdjfnasdfj2412kjdasf21341kdjsdj824dnvyu23r1y2349132ur')
+export const PUBLICK_KEY = b4a.alloc(32, 'asdjfnasdfj2412kjdasf21341kdjsdj824dnvyu23r1y2349132ur')
+export const SECRET_KEY = b4a.alloc(64, 'asdjfnasdfj2412kjdasf21341kdjsdj824dnvyu23r1y2349132ur')
 // console.log('Public Kye ,secrtes Kesy', PUBLICK_KEY.toString('hex'), SECRET_KEY.toString('hex'))
 // Usage examples for CLI
 export const USAGE_EXAMPLES = [

@@ -1,7 +1,7 @@
-import { GENERATE_HASH, JOIN_GROUP, LEAVE_GROUP, READ_MESSAGE_FROM_STORE, RECEIVE_MESSAGE, RPC_LOG, SEND_MESSAGE, UPDATE_PEER_CONNECTION } from '@/constants/command.mjs';
+import { CREATE_INVITE, READ_MESSAGE_FROM_STORE, RECEIVE_MESSAGE, RPC_LOG, SEND_MESSAGE, UPDATE_PEER_CONNECTION } from '@/constants/command.mjs';
 import { rpcService } from '@/hooks/RPC';
-import { addMessage, addMessageInBatchs, loadMessages, setActiveUser, setGroupIdHash } from '@/Redux/chatReducer';
-import store, { RootState } from '@/Redux/store';
+import { addMessage, addMessageInBatchs, loadMessages, setActiveUser } from '@/Redux/chatReducer';
+import { RootState } from '@/Redux/store';
 import { formatLogs } from '@/utils/helpter';
 import { useEffect, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
@@ -10,6 +10,7 @@ export const useChat = () => {
   const dispatch = useDispatch();
   const messages = useSelector((state: RootState) => state.chat.messages);
   const activeUser = useSelector((state: RootState) => state.chat.activeUser);
+  const userId = useSelector((state: RootState) => state.auth.credentials.userId);
   const [text, setText] = useState('');
   const [connection, setConnection] = useState({})
 
@@ -18,22 +19,15 @@ export const useChat = () => {
   useEffect(() => {
     const readMessage = async () => {
       if (activeUser && activeUser.groupId && messages.length === 0) {
-        const message = await rpcService.send(READ_MESSAGE_FROM_STORE, { groupId: activeUser.groupId, reverse: true }).reply()
+        const message = await rpcService.send(READ_MESSAGE_FROM_STORE, { groupId: activeUser.groupId }).reply()
         console.log('Read message ', message);
         if (message)
           dispatch(loadMessages(message));
       }
     }
-    const generateHash = async () => {
-      const groupIdHash = store.getState()?.chat?.groupIdHash;
-      if (groupIdHash !== null) return
+    readMessage();
 
-      const result = await rpcService.send(GENERATE_HASH, { groupId: activeUser.groupId }).reply()
-      console.log('topic hash', result.hash);
-      dispatch(setGroupIdHash(result.hash))
-    }
     if (activeUser && activeUser.groupId) {
-      generateHash()
       rpcService.onRequest(RECEIVE_MESSAGE, (data: any) => {
         console.log('data recveid from peer', data)
         if (Array.isArray(data)) {
@@ -44,10 +38,8 @@ export const useChat = () => {
       });
 
       rpcService.onRequest(RPC_LOG, (data: any) => formatLogs(data));
-      rpcService.send(JOIN_GROUP, activeUser);
       rpcService.onRequest(UPDATE_PEER_CONNECTION, (data) => {
-        const groupIdHash = store.getState()?.chat?.groupIdHash;
-        const status = data[groupIdHash]
+        const status = data[activeUser.groupId];
         console.log('peer connection', data)
         if (Object.keys(data).length > 0 && status) {
           console.log('status', status);
@@ -56,11 +48,6 @@ export const useChat = () => {
       })
     }
 
-    readMessage()
-
-    return () => {
-      rpcService.send(LEAVE_GROUP, activeUser)
-    };
   }, [activeUser, dispatch]);
 
 
@@ -74,22 +61,28 @@ export const useChat = () => {
       minute: '2-digit',
     });
     const newMessage = {
+      write: true,
       id: Date.now().toString(),
       type: 'message',
       text,
-      sender: 'other',
+      sender: userId,
       timestamp: now,
       groupId: activeUser?.groupId,
     };
     try {
-
-      rpcService.send(SEND_MESSAGE, [newMessage]);
+      console.log('Send message', newMessage);
+      rpcService.send(SEND_MESSAGE, newMessage);
     } catch {
       console.error('Failed to send message:');
     }
-    newMessage.sender = 'me'
     dispatch(addMessage(newMessage));
     setText('');
+  };
+
+  const createInvite = async () => {
+    if (!activeUser?.groupId) return;
+    const invite = await rpcService.send(CREATE_INVITE, { groupId: activeUser.groupId }).reply();
+    console.log('Invite created:', invite);
   };
 
   const setActiveUserInChat = (user: any) => {
@@ -103,6 +96,8 @@ export const useChat = () => {
     sendMessage,
     activeUser,
     setActiveUserInChat,
-    connection
+    createInvite,
+    connection,
+    userId
   };
 };

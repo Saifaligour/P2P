@@ -11,6 +11,7 @@ const COMMANDS = {
     GENERATE_HASH: 9,
     REGISTER_USER: 10,
     FETCH_USER_DETAILS: 11,
+    CREATE_INVITE: 12,
 };
 
 // Dynamically export all keys
@@ -26,7 +27,8 @@ export const {
     UPDATE_PEER_CONNECTION,
     GENERATE_HASH,
     REGISTER_USER,
-    FETCH_USER_DETAILS
+    FETCH_USER_DETAILS,
+    CREATE_INVITE
 } = COMMANDS;
 
 export function getCommand(value) {

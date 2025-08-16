@@ -2,7 +2,7 @@
 import b4a from 'b4a'
 import Hyperbee from 'hyperbee'
 export default class View {
-  constructor(verbose = false) {
+  constructor(verbose = true) {
     this.VERBOSE_LOGGING = verbose
   }
 
@@ -22,17 +22,17 @@ export default class View {
         await host.addWriter(b4a.from(value.add, 'hex'), { indexer: true })
         if (this.VERBOSE_LOGGING) console.log('Writer and indexer added successfully:', value.add)
       }
-      if (value.remove) {
+      else if (value.remove) {
         if (this.VERBOSE_LOGGING) console.log('Processing remove writer command for:', value.remove)
         // Remove as both writer AND indexer
         await host.removeWriter(b4a.from(value.remove, 'hex'), { indexer: true })
         if (this.VERBOSE_LOGGING) console.log('Writer and indexer removed successfully:', value.remove)
       }
-      if (value.add) {
-        await view.put(value.id, value)
+      else if (value.delete) {
+        view.delete(value.id)
       }
-      if (value.delete) {
-        await view.delete(value.id)
+      else if (value.write) {
+        view.put(value.id, value)
       }
     }
   }

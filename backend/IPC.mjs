@@ -28,6 +28,7 @@ class RPCManager {
     init() {
         if (this.initialized) return;
 
+        // eslint-disable-next-line no-undef
         this.rpc = new RPC(BareKit?.IPC, async (req) => {
             const { command, data } = req;
             const cmd = getCommand(command);

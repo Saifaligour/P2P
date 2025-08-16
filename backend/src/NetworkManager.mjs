@@ -20,7 +20,7 @@ export default class NetworkManager {
 
   onConnect() {
     this.swarm.on('connection', (c) => {
-      this.db.store.replicate(c)
+      this.db.replicate(c)
       console.log('New peer connected (swarm remotePublicKey):', c.remotePublicKey.toString('hex'))
       console.log('New peer connected (swarm publicKey):', c.publicKey.toString('hex'))
       // Listen for the peer's autobase key exchange
@@ -65,7 +65,6 @@ export default class NetworkManager {
     try {
       const message = JSON.parse(data.toString())
       console.log('message', message);
-
       if (message.type === 'exchange-key' && message.localKey) {
         const key = connection.remotePublicKey.toString('hex')
         // this.announceMyGroups(key, [message.localKey])

@@ -18,7 +18,7 @@ import {
 } from 'react-native';
 
 // Header Component
-const Header = memo(({ activeUser, connection }: { activeUser: any, connection: any }) => {
+const Header = memo(({ activeUser, connection, createInvite }: { activeUser: any, connection: any, createInvite: any }) => {
   return (
     <View style={styles.header}>
       <BackButton style={styles.backButton} color="#333" size={24} />
@@ -32,7 +32,7 @@ const Header = memo(({ activeUser, connection }: { activeUser: any, connection: 
         <TouchableOpacity style={styles.headerIcon}>
           <Ionicons name="videocam" size={24} color="#333" />
         </TouchableOpacity>
-        <TouchableOpacity style={styles.headerIcon}>
+        <TouchableOpacity style={styles.headerIcon} onPress={createInvite}>
           <Ionicons name="call" size={22} color="#333" />
         </TouchableOpacity>
         <TouchableOpacity style={styles.headerIcon}>
@@ -45,7 +45,7 @@ const Header = memo(({ activeUser, connection }: { activeUser: any, connection: 
 Header.displayName = "Header";
 
 // Message Component (individual message render)
-const Message = memo(({ item }: any) => {
+const Message = memo(({ item, userId }: any) => {
   if (item.type === 'system') {
     return (
       <View style={styles.systemMessageContainer}>
@@ -66,17 +66,17 @@ const Message = memo(({ item }: any) => {
     <View
       style={[
         styles.messageContainer,
-        item.sender === 'me' ? styles.myMessageContainer : styles.otherMessageContainer,
+        item.sender === userId ? styles.myMessageContainer : styles.otherMessageContainer,
       ]}
     >
       <View
         style={[
           styles.messageBubble,
-          item.sender === 'me' ? styles.myMessageBubble : styles.otherMessageBubble,
+          item.sender === userId ? styles.myMessageBubble : styles.otherMessageBubble,
         ]}
       >
         <Text style={styles.messageText}>{item.text}</Text>
-        <Text style={styles.messageTime}>{item.time}</Text>
+        <Text style={styles.messageTime}>{item.timestamp}</Text>
       </View>
     </View>
   );
@@ -149,14 +149,14 @@ InputBar.displayName = "InputBar";
 
 const ChatScreen = () => {
   const flatListRef = useRef(null);
-  const { messages, text, setText, sendMessage, activeUser, connection } = useChat();
+  const { messages, text, setText, sendMessage, activeUser, connection, userId, createInvite } = useChat();
   const headerHeightValue = useHeaderHeight();
   const headerHeight = Platform.OS === "ios" ? headerHeightValue : 0;
 
   return (
     <SafeAreaView style={styles.container}>
       <StatusBar barStyle="dark-content" backgroundColor="#f0f2f5" />
-      <Header activeUser={activeUser} connection={connection} />
+      <Header activeUser={activeUser} connection={connection} createInvite={createInvite} />
 
       <KeyboardAvoidingView
         style={{ flex: 1 }}
@@ -166,7 +166,7 @@ const ChatScreen = () => {
         <MessageList
           messages={messages}
           flatListRef={flatListRef}
-          renderMessage={({ item }) => <Message item={item} />}
+          renderMessage={({ item }) => <Message item={item} userId={userId} />}
         />
 
         <InputBar text={text} setText={setText} sendMessage={sendMessage} />
