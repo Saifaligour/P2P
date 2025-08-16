@@ -1,6 +1,6 @@
 
 
-export const APP_NAME = 'P2P';
+export const APP_NAME = 'P2P-IOS';
 export const ENVIRONMENT = 'dev';
 export const IS_PROD = ENVIRONMENT === 'prod';
 export const USER_STORE = 'USER_STORE';

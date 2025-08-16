@@ -1,9 +1,8 @@
 
-import b4a from 'b4a';
 import c from 'compact-encoding';
 import sodium from 'sodium-universal';
 import z32 from 'z32';
-import { CONFIG, PUBLICK_KEY, SECRET_KEY } from './config.mjs';
+import { CONFIG, PUBLICK_KEY, SECRET_KEY } from '../../constants/config.mjs';
 
 export function keyPair(seed) {
     // console.log(PUBLICK_KEY.toString('hex'), SECRET_KEY.toString('hex'));
@@ -14,18 +13,6 @@ export function keyPair(seed) {
         secretKey: SECRET_KEY
     }
 
-}
-
-export function encrypt(data, nonce, secretKey) {
-    const output = b4a.allocUnsafe(data.byteLength + sodium.crypto_aead_xchacha20poly1305_ietf_ABYTES)
-    sodium.crypto_aead_xchacha20poly1305_ietf_encrypt(output, data, nonce, null, nonce, secretKey)
-    return output
-}
-
-export function decrypt(data, nonce, secretKey) {
-    const output = b4a.allocUnsafe(data.byteLength - sodium.crypto_aead_xchacha20poly1305_ietf_ABYTES)
-    sodium.crypto_aead_xchacha20poly1305_ietf_decrypt(output, null, data, nonce, nonce, secretKey)
-    return output
 }
 
 const Invite = {

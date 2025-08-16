@@ -1,16 +1,16 @@
 {
   "expo": {
-    "name": "P2P",
-    "slug": "P2P",
+    "name": "P2P_IOS",
+    "slug": "P2P_IOS",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
-    "scheme": "p2p",
+    "scheme": "P2P_IOS",
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.anonymous.P2P"
+      "bundleIdentifier": "com.anonymous.p2p.ios"
     },
     "android": {
       "adaptiveIcon": {
@@ -18,7 +18,7 @@
         "backgroundColor": "#ffffff"
       },
       "edgeToEdgeEnabled": true,
-      "package": "com.anonymous.P2P"
+      "package": "com.anonymous.p2p.ios"
     },
     "web": {
       "bundler": "metro",

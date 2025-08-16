@@ -14,7 +14,8 @@ export const CONFIG = {
   KEY_EXCHANGE_DELAY: 500, // Delay before sending key exchange (ms)
   WRITER_ADD_DELAY: 1000, // Delay before adding peer as writer (ms)
   WRITABLE_CHECK_DELAY: 500, // Delay before checking writability after member-add (ms)
-  INVITE_EXPIRY_MS: 1000 * 60 * 5 // 5 minutes
+  INVITE_EXPIRY_MS: 1000 * 60 * 5, // 5 minutes
+  BASE_PATH: 'file:///Volumes/Home/practice/P2P/P2P/db'
 }
 
 export const UI_CONFIG = {
