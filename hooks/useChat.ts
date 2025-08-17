@@ -2,7 +2,7 @@ import { CREATE_INVITE, READ_MESSAGE_FROM_STORE, RECEIVE_MESSAGE, RPC_LOG, SEND_
 import { rpcService } from '@/hooks/RPC';
 import { addMessage, addMessageInBatchs, loadMessages, setActiveUser } from '@/Redux/chatReducer';
 import { RootState } from '@/Redux/store';
-import { formatLogs } from '@/utils/helpter';
+import { copyToClipboard, formatLogs } from '@/utils/helpter';
 import { useEffect, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 
@@ -18,9 +18,8 @@ export const useChat = () => {
 
   useEffect(() => {
     const readMessage = async () => {
-      if (activeUser && activeUser.groupId && messages.length === 0) {
+      if (activeUser && activeUser.groupId) {
         const message = await rpcService.send(READ_MESSAGE_FROM_STORE, { groupId: activeUser.groupId }).reply()
-        console.log('Read message ', message);
         if (message)
           dispatch(loadMessages(message));
       }
@@ -29,7 +28,6 @@ export const useChat = () => {
 
     if (activeUser && activeUser.groupId) {
       rpcService.onRequest(RECEIVE_MESSAGE, (data: any) => {
-        console.log('data recveid from peer', data)
         if (Array.isArray(data)) {
           dispatch(addMessageInBatchs(data));
         } else {
@@ -40,9 +38,7 @@ export const useChat = () => {
       rpcService.onRequest(RPC_LOG, (data: any) => formatLogs(data));
       rpcService.onRequest(UPDATE_PEER_CONNECTION, (data) => {
         const status = data[activeUser.groupId];
-        console.log('peer connection', data)
         if (Object.keys(data).length > 0 && status) {
-          console.log('status', status);
           setConnection(status);
         }
       })
@@ -81,8 +77,10 @@ export const useChat = () => {
 
   const createInvite = async () => {
     if (!activeUser?.groupId) return;
-    const invite = await rpcService.send(CREATE_INVITE, { groupId: activeUser.groupId }).reply();
-    console.log('Invite created:', invite);
+    const { invite } = await rpcService.send(CREATE_INVITE, { groupId: activeUser.groupId }).reply();
+    if (invite) {
+      copyToClipboard(invite);
+    }
   };
 
   const setActiveUserInChat = (user: any) => {

@@ -13,14 +13,14 @@ export default class NetworkManager {
       // bootstrap: BOOTSTRAP_NODES,
       // port: PORT
     })
-
+    console.log('Hyperswarm initialized');
     this.peerHandler()
     this.onConnect()
   }
 
   onConnect() {
     this.swarm.on('connection', (c) => {
-      this.db.replicate(c)
+      // this.db.replicate(c)
       console.log('New peer connected (swarm remotePublicKey):', c.remotePublicKey.toString('hex'))
       console.log('New peer connected (swarm publicKey):', c.publicKey.toString('hex'))
       // Listen for the peer's autobase key exchange

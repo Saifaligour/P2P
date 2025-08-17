@@ -86,7 +86,7 @@ export function decodeInvite(invite) {
 }
 
 
-class WatchedMap extends Map {
+class Map_W extends Map {
     constructor() {
         super();
         this._onAdd = () => { };
@@ -109,7 +109,7 @@ class WatchedMap extends Map {
     }
 }
 
-class WatchedSet extends Set {
+class Set_W extends Set {
     constructor() {
         super();
         this._onAdd = () => { };

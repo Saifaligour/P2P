@@ -51,7 +51,6 @@ export const useAuth = () => {
   const checkAuth = async (): Promise<boolean> => {
     const res = await rpcService.send(FETCH_USER_DETAILS, {}).reply();
     if (res?.data) {
-      console.log('user details,', res.data);
       dispatch(setAuthDetails(res.data));
       return !!res.data.name;
     }

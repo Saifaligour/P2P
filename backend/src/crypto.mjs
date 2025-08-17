@@ -10,7 +10,7 @@ export default class SymmetricCrypto {
         if (key && key.length !== sodium.crypto_aead_xchacha20poly1305_ietf_KEYBYTES) {
             throw new Error(`Key must be ${sodium.crypto_aead_xchacha20poly1305_ietf_KEYBYTES} bytes`);
         }
-        this.key = key || b4a.from('0123456789dfjejcdef0123456789abcdef', 'utf-8');
+        this.key = key || b4a.from('0123456789dfjejcdef01235678abcef', 'hex');
     }
 
     deriveKey(key) {

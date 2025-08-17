@@ -60,8 +60,10 @@ export const useCreateUser = () => {
   const joinGroup = async (invite) => {
     if (invite) {
       const res = await rpcService.send(JOIN_GROUP, { invite }).reply();
-      console.log(res);
-      goBack();
+      if (res?.data) {
+        addGroup(res.data)
+        goBack();
+      }
     }
   }
 

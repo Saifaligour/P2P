@@ -41,6 +41,7 @@ class App {
   async start() {
     this.log('start', 'Starting app...');
     try {
+      this.setupNetworkManager();
       await this.getGroupStore();
       await this.initDB(GROUP_INFO);
       this.initKeyPair();
@@ -75,7 +76,6 @@ class App {
     this.log('initDB', `Initializing DB for ${name}`);
     try {
       await this.storeManager.initDB(name);
-      await this.setupNetworkManager();
       this.groups = await this.storeManager.fetchGroups();
       this.log('initDB', `Fetched ${this.groups.length} groups`);
       await Promise.all(this.groups.map(g => this.loadGroup(g)));
@@ -95,7 +95,6 @@ class App {
       const base = await this.loadBase(group.baseKey);
       this.registerBaseEvents(base, group.groupId);
       this.bases.set(group.groupId, base);
-      this.networkManager.join(base.discoveryKey);
       this.log('loadGroup', `Group ${group.groupId} loaded successfully`);
     } catch (error) {
       this.log('loadGroup', `Failed to load group ${group.groupId}`, error);
@@ -108,6 +107,7 @@ class App {
     const namespace = store.namespace(baseKey);
     const base = new Autobase(namespace, baseKey);
     await base.ready();
+    this.networkManager.join(base.discoveryKey);
     this.log('loadBase', 'Base ready');
     return base;
   }
@@ -260,12 +260,11 @@ class App {
 
       const base = await this.loadBase(b4a.from(key, 'hex'));
       this.registerBaseEvents(base, groupId);
-
-      this.networkManager.join(b4a.from(groupId, 'hex'));
       this.bases.set(groupId, base);
-      await this.storeManager.createGroups(res.data);
+      const metadata = JSON.parse(res.data);
+      await this.storeManager.createGroups(metadata);
       this.log('joinGroupHandler', `Joined group successfully: ${groupId}`);
-      return { success: true, groupId, data: res.data };
+      return { success: true, groupId, data: metadata };
     } catch (error) {
       this.log('joinGroupHandler', 'Failed to join group', error);
       return { error: error.message || 'Failed to join group' };
@@ -294,8 +293,6 @@ class App {
       });
 
       await this.storeManager.createGroups(metadata);
-      this.networkManager.join(base.discoveryKey);
-
       if (base.writable) {
         this.log('createGroupHandler', `Base writable immediately for group ${groupId}`);
         await this.handleWritable(groupId);
