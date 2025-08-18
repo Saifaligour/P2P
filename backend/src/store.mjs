@@ -117,6 +117,15 @@ class Store {
         }
     }
 
+    async updateGroupMetaData(groupId, metaData) {
+        this.#log('updateGroupMetaData', `Updating metadata for group ${groupId}`, metaData)
+        const db = await this.initDB(GROUP_INFO)
+        const { value } = await db.get(groupId)
+        value.message = metaData.message;
+        db.put(groupId, value)
+        this.#log('updateGroupMetaData', `Metadata updated for group ${groupId}`)
+    }
+
     // Fetch all groups (cold load only)
     async fetchGroups() {
         this.#log('fetchGroups', 'Fetching all groups')
@@ -129,6 +138,14 @@ class Store {
 
         this.#log('fetchGroups', `Fetched ${groups.length} groups`, groups)
         return groups
+    }
+
+    async getGroupDetails(groupId) {
+        this.#log('getGroupDetails', `Fetching group: ${groupId}`)
+        const db = await this.initDB(GROUP_INFO)
+        const { value } = await db.get(groupId)
+        this.#log('getGroupDetails', `Fetched group: ${groupId}`, value)
+        return value
     }
 }
 

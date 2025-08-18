@@ -1,4 +1,4 @@
-import { FETCH_USER_DETAILS, REGISTER_USER, RPC_LOG } from '@/constants/command.mjs';
+import { FETCH_USER_DETAILS, REGISTER_USER } from '@/constants/command.mjs';
 import { rpcService } from '@/hooks/RPC';
 import {
   setAuthDetails,
@@ -6,9 +6,7 @@ import {
   setAuthField,
   setAuthLoading
 } from '@/Redux/authReducer';
-import { formatLogs } from '@/utils/helpter';
 import { router } from 'expo-router';
-import { useEffect } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 
 export const useAuth = () => {
@@ -56,10 +54,6 @@ export const useAuth = () => {
     }
     return false;
   };
-
-  useEffect(() => {
-    rpcService.onRequest(RPC_LOG, (data: any) => formatLogs(data));
-  }, []);
 
   return {
     credentials,

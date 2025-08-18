@@ -41,8 +41,8 @@ class RPCManager {
     this.rpc = new RPC(IPC as Duplex, async (req) => {
       const { command, data } = req;
       const cmd = getCommand(command)
-      console.log('Received RPC request:', cmd);
       let payload = this.decode(data, cmd)
+      // console.log('Received RPC request:', cmd, payload);
       // 1. Handle request/response if handler is registered
       const handler = this.requestHandlers.get(command);
       if (handler) {
@@ -126,7 +126,6 @@ class RPCManager {
     this.initialized = false;
   }
   decode = (data: any, cmd, format: BufferEncoding = 'utf8') => {
-    console.log('Decoding RPC request:', cmd);
     if (b4a.isBuffer(data) || data instanceof Uint8Array) {
       return JSON.parse(b4a.toString(data, format))
     }

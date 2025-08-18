@@ -1,4 +1,4 @@
-import { CREATE_GROUP, JOIN_GROUP, RPC_LOG } from '@/constants/command.mjs';
+import { CREATE_GROUP, JOIN_GROUP } from '@/constants/command.mjs';
 import { rpcService } from '@/hooks/RPC';
 import {
   resetCreateUser,
@@ -8,9 +8,7 @@ import {
 } from '@/Redux/createUserReducer';
 import store, { RootState } from '@/Redux/store';
 import { setUserList } from '@/Redux/userListReducer';
-import { formatLogs } from '@/utils/helpter';
 import { useRouter } from 'expo-router';
-import { useEffect } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 
 export const useCreateUser = () => {
@@ -67,10 +65,6 @@ export const useCreateUser = () => {
     }
   }
 
-  useEffect(() => {
-    rpcService.onRequest(RPC_LOG, (data: any) => formatLogs(data));
-
-  }, [])
   return {
     groupName,
     groupDescription,

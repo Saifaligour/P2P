@@ -145,7 +145,7 @@ class RPCManager {
     }
 
     log(file, method, command, message, dataOrError) {
-        const prod = false;
+        const prod = true;
         console.log(file, method, command, message, dataOrError || null);
 
         if (prod) {

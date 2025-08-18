@@ -2,13 +2,14 @@
 import Autobase from 'autobase';
 import b4a from 'b4a';
 import Hyperbee from 'hyperbee';
-
+import { Node } from 'hyperbee/lib/messages';
+import { CONFIG } from '../../constants/config.mjs';
 /**
  * Custom View class extending Autobase
  * Encapsulates Hyperbee logic and adds helper methods
  */
 export default class View extends Autobase {
-  constructor(store, bootstrap = null, handlers = {}, verbose = true) {
+  constructor(store, bootstrap = null, RPC, handlers = {}) {
     // Allow handlers as second arg if bootstrap is not a string or buffer
     if (bootstrap && typeof bootstrap !== 'string' && !b4a.isBuffer(bootstrap)) {
       handlers = bootstrap;
@@ -25,7 +26,7 @@ export default class View extends Autobase {
     const apply = handlers.apply || View.apply;
 
     super(store, bootstrap, { ...handlers, open, apply });
-    this.VERBOSE_LOGGING = verbose;
+    this.RPC = RPC;
   }
 
   /** Default apply method using your JSON-node pattern */
@@ -72,8 +73,34 @@ export default class View extends Autobase {
     return this.view.peek(opts);
   }
 
-  /** Create a read stream from view */
-  createReadStream(range = {}, opts = {}) {
-    return this.view.createReadStream(range, opts);
+  /** Create a key stream from view */
+  async getBySeq(seq) {
+
+    try {
+      await this.view.ready()
+      await this.view.update()
+      const msg = await this.view.getBySeq(seq);
+      return Node.decode(msg);
+    } catch (error) {
+      this.log('getBySeq', 'Failed to parse message', error);
+      if (error.code === 'SNAPSHOT_NOT_AVAILABLE') {
+        // Fallback: use snapshot for consistent read
+        const snap = this.view.snapshot()
+        try {
+          const msg = await snap.getBySeq(seq);
+          return Node.decode(msg);
+        } catch (error) {
+          this.log('getBySeq', 'Failed to get message from snapshot', error);
+        } finally {
+          await snap.close();
+        }
+      }
+    }
+  }
+  // Optional logging
+  log(method, message, dataOrError = null) {
+    if (CONFIG.VERBOSE_LOGGING) {
+      this.RPC.log('autobase.mjs', method, null, message, dataOrError)
+    }
   }
 }

@@ -3,7 +3,7 @@
 import b4a from 'b4a';
 import {
   CREATE_GROUP, CREATE_INVITE, FETCH_GROUP_DETAILS, FETCH_USER_DETAILS,
-  JOIN_GROUP, READ_MESSAGE_FROM_STORE, REGISTER_USER, SEND_MESSAGE
+  JOIN_GROUP, READ_MESSAGE_FROM_STORE, RECEIVE_MESSAGE, REGISTER_USER, SEND_MESSAGE
 } from '../constants/command.mjs';
 import { CONFIG, parseArgs } from '../constants/config.mjs';
 import { GROUP_INFO, GROUP_STORE, USER_INFO, USER_STORE } from '../constants/index.mjs';
@@ -94,7 +94,6 @@ class App {
     try {
       const base = await this.loadBase(group.baseKey);
       this.registerBaseEvents(base, group.groupId);
-      this.bases.set(group.groupId, base);
       this.log('loadGroup', `Group ${group.groupId} loaded successfully`);
     } catch (error) {
       this.log('loadGroup', `Failed to load group ${group.groupId}`, error);
@@ -105,10 +104,11 @@ class App {
     this.log('loadBase', `Loading base with key: ${b4a.toString(baseKey, 'hex')}`);
     const store = await this.getGroupStore();
     const namespace = store.namespace(baseKey);
-    const base = new Autobase(namespace, baseKey);
+    const base = new Autobase(namespace, baseKey, this.RPC);
     await base.ready();
     this.networkManager.join(base.discoveryKey);
     this.log('loadBase', 'Base ready');
+    this.bases.set(base.discoveryKey.toString('hex'), base);
     return base;
   }
 
@@ -160,7 +160,7 @@ class App {
     try {
       const base = await this.bases.get(groupId);
       if (!base) throw new Error(`Group not found: ${groupId}`);
-      const data = await base.get(groupId);
+      const data = await this.storeManager.getGroupDetails(groupId)
       this.log('createInviteHandler', `Fetched data for group ${groupId}`, data);
       const invite = this.crypto.encryptObject({
         publicKey: this.keyPair.publicKey.toString('hex'),
@@ -178,19 +178,26 @@ class App {
 
   async newMessageFromPeer(groupId) {
     this.log('newMessageFromPeer', `Fetching new messages for group ${groupId}`);
+    let stream
     try {
       const base = this.bases.get(groupId);
       if (!base) {
         this.log('newMessageFromPeer', `Base not found for group ${groupId}`);
         return;
       }
-
-      for await (const { key, value } of base.view.createReadStream({ live: true })) {
+      await base.view.ready();
+      stream = base.view.createReadStream({ start: base.length - 1, end: base.length });
+      for await (const { key, value } of stream) {
         if (key === groupId) continue;
-        this.log('newMessageFromPeer', `New message in group ${groupId}`, value);
+        this.log('newMessageFromPeer', `Fetched message for group ${groupId}`, { key, value });
+        this.RPC.send(RECEIVE_MESSAGE, { groupId, message: value });
       }
     } catch (error) {
       this.log('newMessageFromPeer', `Error fetching new message for group ${groupId}`, error);
+    }
+    finally {
+      stream.destroy();
+      this.log('newMessageFromPeer', `Finished fetching new messages for group ${groupId}`);
     }
   }
 
@@ -206,13 +213,13 @@ class App {
     }
   }
 
-  async readMessageHandler({ groupId }) {
+  async readMessageHandler({ groupId, start = 0, end = -1 }) {
     this.log('readMessageHandler', `Reading messages for group ${groupId}`);
     const messages = [];
     try {
       const base = this.bases.get(groupId);
       if (!base) throw new Error(`Group not found: ${groupId}`);
-      for await (const { key, value } of base.view.createReadStream()) {
+      for await (const { key, value } of base.view.createReadStream({ start, end })) {
         if (key === groupId) continue; // Skip group metadata
         messages.push(value);
       }
@@ -220,9 +227,23 @@ class App {
     } catch (error) {
       this.log('readMessageHandler', `Failed to read messages for group ${groupId}`, error);
     }
-    return messages;
+    if (messages.length > 0) {
+      this.updateLastMessageInGroup(groupId, messages[0]);
+    }
+    return messages.reverse();
   }
 
+  updateLastMessageInGroup(groupId, message) {
+    this.log('updateLastMessageInGroup', `Updating last message for group ${groupId}`, message);
+    const group = this.groups.find(g => g.groupId === groupId);
+    if (group) {
+      group.message = message;
+      this.storeManager.updateGroupMetaData(groupId, message);
+      this.log('updateLastMessageInGroup', `Last message updated for group ${groupId}`);
+    } else {
+      this.log('updateLastMessageInGroup', `Group not found: ${groupId}`);
+    }
+  }
   async registerUserHandler(user) {
     this.log('registerUserHandler', 'Registering user', user);
     try {
@@ -260,7 +281,6 @@ class App {
 
       const base = await this.loadBase(b4a.from(key, 'hex'));
       this.registerBaseEvents(base, groupId);
-      this.bases.set(groupId, base);
       const metadata = JSON.parse(res.data);
       await this.storeManager.createGroups(metadata);
       this.log('joinGroupHandler', `Joined group successfully: ${groupId}`);
@@ -300,8 +320,6 @@ class App {
         this.log('createGroupHandler', `Waiting for writable base in group ${groupId}`);
         base.once('writable', () => this.handleWritable(groupId));
       }
-
-      this.bases.set(groupId, base);
       await base.view.ready();
       await base.append(JSON.stringify(metadata));
       this.log('createGroupHandler', `Group created successfully: ${groupId}`);
@@ -319,7 +337,7 @@ class App {
         this.log('getGroupDetailsHandler', 'No groups cached, reinitializing DB');
         await this.initDB(GROUP_INFO);
       }
-      this.log('getGroupDetailsHandler', `Returning ${this.groups.length} groups`);
+      this.log('getGroupDetailsHandler', `Returning ${this.groups.length} groups from cache`);
       return this.groups;
     } catch (error) {
       this.log('getGroupDetailsHandler', 'Error fetching group details', error);
@@ -345,8 +363,8 @@ class App {
     this.RPC.onRequest(JOIN_GROUP, this.joinGroupHandler.bind(this));
   }
 
-  log(method, message, data = null) {
-    this.RPC.log('app.mjs', method, 'COMMAND', message, data);
+  log(method, message, data = null, command = null) {
+    this.RPC.log('app.mjs', method, command, message, data);
   }
 }
 

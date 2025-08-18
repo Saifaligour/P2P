@@ -20,7 +20,7 @@ export default class NetworkManager {
 
   onConnect() {
     this.swarm.on('connection', (c) => {
-      // this.db.replicate(c)
+      this.db.replicate(c)
       console.log('New peer connected (swarm remotePublicKey):', c.remotePublicKey.toString('hex'))
       console.log('New peer connected (swarm publicKey):', c.publicKey.toString('hex'))
       // Listen for the peer's autobase key exchange
@@ -52,7 +52,7 @@ export default class NetworkManager {
           this.sendKeyExchange(groupId, writerKey, peer)
           base.replicate(peer)
         }
-        console.log('New Peer Connection', base)
+        console.log('New Peer Connection',)
         console.log('Existing', groupId, 'Connection Size:', topic.swarm.connections.size)    //   for (const peer of peers) peer.write(JSON.stringify({ message: 'hi' }))
       })
 

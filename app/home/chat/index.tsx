@@ -90,7 +90,7 @@ const MessageList = memo(({ messages, flatListRef, renderMessage }: any) => (
     data={messages}
     renderItem={renderMessage}
     keyExtractor={(item) => item.id}
-    inverted
+    // inverted
     contentContainerStyle={{ paddingHorizontal: 12, paddingBottom: 90, paddingTop: 10 }}
     showsVerticalScrollIndicator={false}
     keyboardDismissMode="interactive"
