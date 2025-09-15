@@ -1,4 +1,4 @@
-import { styles } from "@/style/UserListStyles";
+import { styles } from "@/style/ChatListStyles";
 import React from "react";
 import { TextInput, View } from "react-native";
 

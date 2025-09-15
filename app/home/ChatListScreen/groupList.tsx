@@ -10,7 +10,7 @@ import { GroupListHeader } from "@/components/chatList/ChatListHeader";
 import SearchBar from "@/components/chatList/SearchBar";
 import { UserRow } from "@/components/chatList/UserDetails";
 import { useUserList } from "@/hooks/useChatList";
-import { styles } from "@/style/UserListStyles";
+import { styles } from "@/style/ChatListStyles";
 
 export default function UserListScreen() {
   const { search, filteredUsers, handleSearchChange, handleOpenChat, handleCreateGroup } = useUserList();

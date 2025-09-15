@@ -1,7 +1,7 @@
 import { RECEIVE_MESSAGE } from "@/constants/command.mjs";
 import { rpcService } from "@/hooks/RPC";
 import { User } from "@/hooks/useChatList";
-import { styles } from "@/style/UserListStyles";
+import { styles } from "@/style/ChatListStyles";
 import React, { memo, useEffect, useState } from "react";
 import { Image, Text, TouchableOpacity, View } from "react-native";
 
