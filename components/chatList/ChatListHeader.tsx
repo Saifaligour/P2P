@@ -12,7 +12,7 @@ export const GroupListHeader = ({ onPlus, onScanQR }: { onPlus: () => void; onSc
       alignItems: 'center',
       justifyContent: 'space-between',
       marginBottom: 8,
-      paddingTop: Platform.OS === 'ios' ? 0 :40, // Add top padding for status bar
+      paddingTop: Platform.OS === 'ios' ? 0 : 40, // Add top padding for status bar
       zIndex: 10,
     }}>
       <View style={{ width: 32 }} />

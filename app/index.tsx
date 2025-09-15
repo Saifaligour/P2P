@@ -1,17 +1,12 @@
 import { useAuth } from "@/hooks/useAuth";
-import { router } from "expo-router";
 import { useEffect } from "react";
 import { ActivityIndicator, StyleSheet, Text, View } from "react-native";
 
 export default function SplashScreen() {
   const { checkAuth } = useAuth();
 
-  async function isLogin() {
-    const isAuthenticated = await checkAuth();
-    router.replace(isAuthenticated ? "/home/UserScreen/groupList" : "/login");
-  }
   useEffect(() => {
-    isLogin();
+    checkAuth();
   }, []);
 
   return (

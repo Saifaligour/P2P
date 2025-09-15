@@ -44,11 +44,11 @@ export const useUserList = () => {
 
   const handleOpenChat = (user: User) => {
     dispatch(setActiveUser(user));
-    router.push("/home/chat");
+    router.push("/home/ChatScreen");
   };
 
   const handleCreateGroup = () => {
-    router.push("/home/UserScreen/createGroup");
+    router.push("/home/ChatListScreen/createGroup");
   };
 
   const handleSearchChange = (text: string) => {

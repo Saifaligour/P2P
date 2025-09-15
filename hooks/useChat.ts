@@ -43,7 +43,7 @@ export const useChat = () => {
       })
     }
 
-  }, [activeUser, dispatch]);
+  }, [activeUser.groupId, dispatch]);
 
 
   // useEffect(() => {

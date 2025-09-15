@@ -1,10 +1,12 @@
 import Hyperswarm from 'hyperswarm'
 // import { BOOTSTRAP_NODES, PORT } from './config.js'
-
+import { USER_STORE } from '../../constants/index.mjs'
+import { wait } from './helper.mjs'
 export default class NetworkManager {
-  constructor(base, db, options = {}) {
+  constructor(base, store, RPC, options = {}) {
     this.base = base
-    this.db = db
+    this.store = store
+    this.RPC = RPC
     this.verbose = options.verbose || false
     this.connectedPeers = 0
     this.onPeerCountChange = options.onPeerCountChange || (() => { })
@@ -13,16 +15,17 @@ export default class NetworkManager {
       // bootstrap: BOOTSTRAP_NODES,
       // port: PORT
     })
-    console.log('Hyperswarm initialized');
+    this.log('constructor', 'Hyperswarm initialized');
     this.peerHandler()
     this.onConnect()
   }
 
   onConnect() {
-    this.swarm.on('connection', (c) => {
-      this.db.replicate(c)
-      console.log('New peer connected (swarm remotePublicKey):', c.remotePublicKey.toString('hex'))
-      console.log('New peer connected (swarm publicKey):', c.publicKey.toString('hex'))
+    this.swarm.on('connection', async (c) => {
+      const store = await this.store.getStore(USER_STORE);
+      store.replicate(c)
+      this.log('onConnect', 'New peer connected (swarm remotePublicKey):', c.remotePublicKey.toString('hex'))
+      this.log('onConnect', 'New peer connected (swarm publicKey):', c.publicKey.toString('hex'))
       // Listen for the peer's autobase key exchange
       c.on('data', (data) => {
         this.handlePeerMessage(data, c)
@@ -33,7 +36,7 @@ export default class NetworkManager {
 
   peerHandler() {
     this.swarm._discovery.watch((groupId, topic) => {
-      console.log('New topic: ', groupId, 'Connection Size:', topic.swarm.connections.size)    //   for (const peer of peers) peer.write(JSON.stringify({ message: 'hi' }))
+      this.log('peerHandler', 'New topic:', groupId, 'Connection Size:', topic.swarm.connections.size)
 
       for (const peer of topic.swarm.connections) {
         const base = this.base.get(groupId)
@@ -42,7 +45,7 @@ export default class NetworkManager {
           this.sendKeyExchange(groupId, writerKey, peer)
           base.replicate(peer)
         }
-        console.log('Existing Peer Connection', base)
+        this.log('peerHandler', 'Existing Peer Connection', base)
       }
 
       topic.swarm.connections.watch((peer) => {
@@ -52,8 +55,8 @@ export default class NetworkManager {
           this.sendKeyExchange(groupId, writerKey, peer)
           base.replicate(peer)
         }
-        console.log('New Peer Connection',)
-        console.log('Existing', groupId, 'Connection Size:', topic.swarm.connections.size)    //   for (const peer of peers) peer.write(JSON.stringify({ message: 'hi' }))
+        this.log('peerHandler', 'New Peer Connection')
+        this.log('peerHandler', 'Existing', groupId, 'Connection Size:', topic.swarm.connections.size)
       })
 
     });
@@ -64,46 +67,48 @@ export default class NetworkManager {
   handlePeerMessage(data, connection) {
     try {
       const message = JSON.parse(data.toString())
-      console.log('message', message);
-      if (message.type === 'exchange-key' && message.localKey) {
+      this.log('handlePeerMessage', 'message', message);
+      if (message.type === 'exchange-key' && message.writerKey) {
         const key = connection.remotePublicKey.toString('hex')
         // this.announceMyGroups(key, [message.localKey])
         // this.indexMyGroups(key, [message.localKey])
-        this.handleKeyExchange(message.groupId, message.localKey)
+        this.handleKeyExchange(message)
       }
     } catch (err) {
       // Not a JSON message, ignore
     }
   }
 
-  async handleKeyExchange(groupId, peerAutobaseKey) {
-    if (this.verbose) console.log('Received peer autobase key:', peerAutobaseKey)
-    if (!this.base.has(groupId)) return;
+  async handleKeyExchange(userDetails) {
+    if (this.verbose) this.log('handleKeyExchange', 'Received peer autobase key:', userDetails.groupId)
+    await wait(300)
+    this.log('handleKeyExchange', 'Has groupId:', this.base.has(userDetails.groupId));
+
+    if (!this.base.has(userDetails.groupId)) return;
     // Only add if we're writable and peer isn't already a writer
-    if (this.base.get(groupId).writable) {
-      setTimeout(async () => {
-        const currentWriters = this.getCurrentWriters(groupId)
+    if (this.base.get(userDetails.groupId).writable) {
+      const currentWriters = this.getCurrentWriters(userDetails.groupId)
+      if (this.verbose) {
+        this.log('handleKeyExchange', 'Current writers:', currentWriters.map(k => k.slice(0, 8) + '...'))
+      }
 
+      if (!currentWriters.includes(userDetails.writerKey)) {
         if (this.verbose) {
-          console.log('Current writers:', currentWriters.map(k => k.slice(0, 8) + '...'))
+          this.log('handleKeyExchange', 'Auto-adding peer autobase key as writer:', userDetails.writerKey)
         }
-
-        if (!currentWriters.includes(peerAutobaseKey)) {
+        try {
+          await this.base.get(userDetails.groupId).append(JSON.stringify({ add: userDetails.writerKey }))
+          this.store.addWriterToGroup(userDetails)
           if (this.verbose) {
-            console.log('Auto-adding peer autobase key as writer:', peerAutobaseKey)
+            this.log('handleKeyExchange', 'Successfully sent add writer command for:', userDetails.writerKey)
           }
-          try {
-            await this.base.get(groupId).append(JSON.stringify({ add: peerAutobaseKey }))
-            if (this.verbose) {
-              console.log('Successfully sent add writer command for:', peerAutobaseKey)
-            }
-          } catch (err) {
-            console.error('Failed to add writer:', err)
-          }
-        } else {
-          if (this.verbose) console.log('Peer already a writer:', peerAutobaseKey)
+        } catch (err) {
+          console.error('Failed to add writer:', err)
         }
-      }, 1000)
+      } else {
+        if (this.verbose) this.log('handleKeyExchange', 'Peer already a writer:', userDetails.wieterKey)
+      }
+
     }
   }
 
@@ -116,15 +121,15 @@ export default class NetworkManager {
     }).filter(Boolean)
   }
 
-  sendKeyExchange(groupId, key, connection) {
+  sendKeyExchange(groupId, writerKey, connection) {
     try {
       const keyExchange = JSON.stringify({
         type: 'exchange-key',
-        localKey: key,
+        writerKey,
         groupId,
       })
       connection.write(keyExchange)
-      if (this.verbose) console.log('Sent our autobase key to peer', keyExchange)
+      if (this.verbose) this.log('sendKeyExchange', 'Sent our autobase key to peer', keyExchange)
     } catch (error) {
       console.error('Failed to send key exchange:', error)
     }
@@ -134,13 +139,17 @@ export default class NetworkManager {
     const DISK = this.swarm.join(discoveryKey)
     await DISK.flushed()
     if (this.verbose) {
-      console.log('Joining swarm with discovery key:', discoveryKey.toString('hex'))
+      this.log('join', 'Joining swarm with discovery key:', discoveryKey.toString('hex'))
     }
     return DISK
   }
 
   destroy() {
     return this.swarm.destroy()
+  }
+
+  log(method, message, data = null, command = null) {
+    this.RPC.log('network.mjs', method, command, message, data);
   }
 
 }

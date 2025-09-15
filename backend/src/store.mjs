@@ -117,13 +117,13 @@ class Store {
         }
     }
 
-    async updateGroupMetaData(groupId, metaData) {
-        this.#log('updateGroupMetaData', `Updating metadata for group ${groupId}`, metaData)
+    async addWriterToGroup(metaData) {
+        this.#log('addWriterToGroup', `Updating metadata for group ${metaData.groupId}`, metaData)
         const db = await this.initDB(GROUP_INFO)
-        const { value } = await db.get(groupId)
-        value.message = metaData.message;
-        db.put(groupId, value)
-        this.#log('updateGroupMetaData', `Metadata updated for group ${groupId}`)
+        const { value } = await db.get(metaData.groupId)
+        value.members.push(metaData)
+        db.put(metaData.groupId, value)
+        this.#log('addWriterToGroup', `Metadata updated for group ${metaData.groupId}`)
     }
 
     // Fetch all groups (cold load only)

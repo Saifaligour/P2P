@@ -1,16 +1,15 @@
 /** @typedef {import('pear-interface')} */ /* global Pear */
 
-import b4a from 'b4a';
 import {
   CREATE_GROUP, CREATE_INVITE, FETCH_GROUP_DETAILS, FETCH_USER_DETAILS,
   JOIN_GROUP, READ_MESSAGE_FROM_STORE, RECEIVE_MESSAGE, REGISTER_USER, SEND_MESSAGE
 } from '../constants/command.mjs';
 import { CONFIG, parseArgs } from '../constants/config.mjs';
-import { GROUP_INFO, GROUP_STORE, USER_INFO, USER_STORE } from '../constants/index.mjs';
+import { GROUP_INFO, GROUP_STORE, USER_INFO } from '../constants/index.mjs';
 import RPCManager from './IPC.mjs';
 import Autobase from './src/autobase.mjs';
 import Crypto from './src/crypto.mjs';
-import { keyPair } from './src/helper.mjs';
+import { decode, keyPair } from './src/helper.mjs';
 import NetworkManager from './src/NetworkManager.mjs';
 import Store from './src/store.mjs';
 class App {
@@ -31,11 +30,6 @@ class App {
   async getGroupStore() {
     this.log('getGroupStore', 'Fetching group store');
     return this.storeManager.getStore(GROUP_STORE);
-  }
-
-  async getUserStore() {
-    this.log('getUserStore', 'Fetching user store');
-    return this.storeManager.getStore(USER_STORE);
   }
 
   async start() {
@@ -89,45 +83,51 @@ class App {
     this.log('loadGroup', `Loading group: ${group.groupId}`);
     if (this.bases.has(group.groupId)) {
       this.log('loadGroup', `Group ${group.groupId} already loaded`);
-      return;
+      return this.bases.get(group.groupId);
     }
     try {
-      const base = await this.loadBase(group.baseKey);
-      this.registerBaseEvents(base, group.groupId);
+      this.loadBase(group, true);
       this.log('loadGroup', `Group ${group.groupId} loaded successfully`);
     } catch (error) {
       this.log('loadGroup', `Failed to load group ${group.groupId}`, error);
     }
   }
 
-  async loadBase(baseKey) {
-    this.log('loadBase', `Loading base with key: ${b4a.toString(baseKey, 'hex')}`);
+  async loadBase(group, exist = false) {
+    this.log('loadBase', `Loading base with key: ${group.baseKey.toString('hex')}`, group);
     const store = await this.getGroupStore();
-    const namespace = store.namespace(baseKey);
-    const base = new Autobase(namespace, baseKey, this.RPC);
+    const namespace = store.namespace(group.baseKey);
+    const base = new Autobase(namespace, group.baseKey, this.RPC);
     await base.ready();
-    this.networkManager.join(base.discoveryKey);
-    this.log('loadBase', 'Base ready');
-    this.bases.set(base.discoveryKey.toString('hex'), base);
-    return base;
-  }
-
-  registerBaseEvents(base, groupId) {
-    this.log('registerBaseEvents', `Registering events for group ${groupId}`);
+    const groupId = base.discoveryKey.toString('hex');
+    this.log('loadBase', `Base loaded for group ${groupId}`);
     base.on('member-add', (key) => this.handleMemberAdd(key, groupId));
     base.on('update', () => this.newMessageFromPeer(groupId));
+    this.networkManager.join(base.discoveryKey);
+    this.log('loadBase', 'Base ready');
+    this.bases.set(groupId, base);
+    if (exist) {
+      await base.view.core.ready()
+      const lastMsg = await base.view.core.get(base.view.core.length - 1)
+      const { value } = decode(lastMsg)
+      group.message = value.text || 'loading...'
+    }
+    Promise.all([group.members.map(g => {
+      this.log('loadBase', `adding new meber in group ${groupId}`)
+      base.append(JSON.stringify({ add: g.writerKey }))
+    })])
+    return base;
   }
 
   async setupNetworkManager() {
     this.log('setupNetworkManager', 'Setting up network manager');
     try {
-      const store = await this.getUserStore();
-      this.networkManager = new NetworkManager(this.bases, store, {
+      this.networkManager = new NetworkManager(this.bases, this.storeManager, this.RPC, {
         verbose: CONFIG.VERBOSE_LOGGING,
         keyPair: this.keyPair,
         onPeerCountChange: (count, groupId) => {
           this.log('setupNetworkManager', `Peer count changed for group ${groupId}: ${count}`);
-        }
+        },
       });
       this.log('setupNetworkManager', 'Network manager ready');
     } catch (error) {
@@ -185,19 +185,23 @@ class App {
         this.log('newMessageFromPeer', `Base not found for group ${groupId}`);
         return;
       }
+      const start = base.view.core.length - 1
+      if (start === 1)
+        return;
       await base.view.ready();
-      stream = base.view.createReadStream({ start: base.length - 1, end: base.length });
-      for await (const { key, value } of stream) {
-        if (key === groupId) continue;
-        this.log('newMessageFromPeer', `Fetched message for group ${groupId}`, { key, value });
+      this.log('newMessageFromPeer', `core lenth :${start}`)
+      stream = base.view.core.createReadStream({ start, live: true });
+      for await (const data of stream) {
+        const { value } = decode(data)
+        this.log('newMessageFromPeer', `Fetched message for group ${groupId}`, value);
         this.RPC.send(RECEIVE_MESSAGE, { groupId, message: value });
       }
     } catch (error) {
       this.log('newMessageFromPeer', `Error fetching new message for group ${groupId}`, error);
     }
     finally {
-      stream.destroy();
-      this.log('newMessageFromPeer', `Finished fetching new messages for group ${groupId}`);
+      stream?.destroy();
+      this.log('newMessageFromPeer', `Final Block , Finished fetching new messages for group ${groupId}`);
     }
   }
 
@@ -213,37 +217,23 @@ class App {
     }
   }
 
-  async readMessageHandler({ groupId, start = 0, end = -1 }) {
+  async readMessageHandler({ groupId, start = 2, end = -1 }) {
     this.log('readMessageHandler', `Reading messages for group ${groupId}`);
     const messages = [];
     try {
       const base = this.bases.get(groupId);
       if (!base) throw new Error(`Group not found: ${groupId}`);
-      for await (const { key, value } of base.view.createReadStream({ start, end })) {
-        if (key === groupId) continue; // Skip group metadata
+      for await (const data of base.view.core.createReadStream({ start, end })) {
+        const { value } = decode(data)
         messages.push(value);
       }
       this.log('readMessageHandler', `Fetched ${messages.length} messages for group ${groupId}`);
     } catch (error) {
       this.log('readMessageHandler', `Failed to read messages for group ${groupId}`, error);
     }
-    if (messages.length > 0) {
-      this.updateLastMessageInGroup(groupId, messages[0]);
-    }
     return messages.reverse();
   }
 
-  updateLastMessageInGroup(groupId, message) {
-    this.log('updateLastMessageInGroup', `Updating last message for group ${groupId}`, message);
-    const group = this.groups.find(g => g.groupId === groupId);
-    if (group) {
-      group.message = message;
-      this.storeManager.updateGroupMetaData(groupId, message);
-      this.log('updateLastMessageInGroup', `Last message updated for group ${groupId}`);
-    } else {
-      this.log('updateLastMessageInGroup', `Group not found: ${groupId}`);
-    }
-  }
   async registerUserHandler(user) {
     this.log('registerUserHandler', 'Registering user', user);
     try {
@@ -279,10 +269,9 @@ class App {
       console.log('Decrypted invite:', { key, groupId, ...res });
       if (!key || !groupId) throw new Error('Invalid invite format');
 
-      const base = await this.loadBase(b4a.from(key, 'hex'));
-      this.registerBaseEvents(base, groupId);
       const metadata = JSON.parse(res.data);
       await this.storeManager.createGroups(metadata);
+      await this.loadBase(metadata);
       this.log('joinGroupHandler', `Joined group successfully: ${groupId}`);
       return { success: true, groupId, data: metadata };
     } catch (error) {
@@ -296,9 +285,9 @@ class App {
     try {
       const store = await this.getGroupStore();
       const baseKey = await Autobase.getLocalKey(store, { keyPair: this.keyPair, name: metadata.name });
-      const base = await this.loadBase(baseKey);
+      metadata.baseKey = baseKey.toString('hex')
+      const base = await this.loadBase(metadata);
       const groupId = base.discoveryKey.toString('hex');
-      this.registerBaseEvents(base, groupId);
 
       Object.assign(metadata, {
         latestMessage: null,
@@ -309,7 +298,6 @@ class App {
         id: groupId,
         write: true,
         writerKey: base.local.key.toString('hex'),
-        baseKey: baseKey.toString('hex')
       });
 
       await this.storeManager.createGroups(metadata);

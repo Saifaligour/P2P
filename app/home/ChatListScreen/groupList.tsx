@@ -6,10 +6,10 @@ import {
   View
 } from "react-native";
 
-import { GroupListHeader } from "@/components/userList/GroupListHeader";
-import SearchBar from "@/components/userList/SearchBar";
-import { UserRow } from "@/components/userList/UserDetails";
-import { useUserList } from "@/hooks/useUserList";
+import { GroupListHeader } from "@/components/chatList/ChatListHeader";
+import SearchBar from "@/components/chatList/SearchBar";
+import { UserRow } from "@/components/chatList/UserDetails";
+import { useUserList } from "@/hooks/useChatList";
 import { styles } from "@/style/UserListStyles";
 
 export default function UserListScreen() {
@@ -18,10 +18,10 @@ export default function UserListScreen() {
   return (
     <SafeAreaView style={styles.safe}>
       <StatusBar barStyle="dark-content" />
-      <View style={[styles.container, { flex: 1 }]}> 
-        <GroupListHeader 
+      <View style={[styles.container, { flex: 1 }]}>
+        <GroupListHeader
           onPlus={handleCreateGroup}
-          onScanQR={() => { /* TODO: handle scan QR action */ }} 
+          onScanQR={() => { /* TODO: handle scan QR action */ }}
         />
         <SearchBar value={search} onChange={handleSearchChange} />
         <FlatList

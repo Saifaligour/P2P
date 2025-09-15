@@ -1,6 +1,6 @@
+import { CreateGroupForm } from '@/components/chatList/CreateGroupForm';
+import { JoinGroupForm } from '@/components/chatList/JoinGroupForm';
 import { BackButton } from '@/components/ui/BackButton';
-import { CreateGroupForm } from '@/components/userList/CreateGroupForm';
-import { JoinGroupForm } from '@/components/userList/JoinGroupForm';
 import { useCreateUser } from '@/hooks/useCreateUser';
 import React, { useState } from 'react';
 import {
