@@ -6,7 +6,6 @@ import React, { useMemo } from 'react';
 import {
   FlatList,
   StatusBar,
-  Text,
   TouchableOpacity,
   View
 } from 'react-native';
@@ -14,13 +13,12 @@ import {
 import { GroupListHeader } from "@/components/chatList/ChatListHeader";
 import SearchBar from "@/components/chatList/SearchBar";
 import { UserRow } from "@/components/chatList/UserDetails";
-import themes from "@/constants/themes";
 import { useThemeColor } from "@/hooks/useThemeColor";
 
 const GroupChatScreen = () => {
 
   const { search, filteredUsers, handleSearchChange, handleOpenChat, handleCreateGroup } = useUserList();
-  const { theme, s, selectedTheme, nextTheme } = useThemeColor();
+  const { theme, s, nextTheme, setIsDark } = useThemeColor();
   const styles = useMemo(() => createStyle(theme, s), [theme, s]);
 
   return (
@@ -37,7 +35,11 @@ const GroupChatScreen = () => {
         <TouchableOpacity onPress={nextTheme} style={styles.themeSwitch} activeOpacity={0.8}>
           <View style={styles.themeSwitchRow}>
             <Ionicons name="color-palette" size={20} color={theme.sentLight} />
-            <Text style={styles.themeText}>{themes[selectedTheme].name}</Text>
+          </View>
+        </TouchableOpacity>
+        <TouchableOpacity onPress={setIsDark} style={styles.themeSwitch} activeOpacity={0.8}>
+          <View style={styles.themeSwitchRow}>
+            <Ionicons name="color-palette" size={20} color={theme.sentLight} />
           </View>
         </TouchableOpacity>
       </View>

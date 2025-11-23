@@ -1,12 +1,19 @@
 
+import themes from "@/constants/themes";
 
 const SET_AUTH_FIELD = 'SET_AUTH_FIELD';
 const SET_AUTH_LOADING = 'SET_AUTH_LOADING';
 const SET_AUTH_ERROR = 'SET_AUTH_ERROR';
 const SET_AUTH_DETAILS = 'SET_AUTH_DETAILS';
 const RESET_AUTH = 'RESET_AUTH';
+const SET_MODE = 'SET_MODE';
+const SET_THEME = 'SET_THEME';
+const SET_NEW_THEME = 'SET_NEW_THEME';
 
 const initialState = {
+  themes: themes,
+  activeTheme: 'jade',
+  mode: 'dark',
   loading: false,
   error: null,
   credentials: {
@@ -33,7 +40,9 @@ export default function authReducer(state = initialState, action: any) {
         credentials: {
           ...state.credentials,
           ...action.payload
-        }
+        },
+        activeTheme: action.payload?.activeTheme || initialState.activeTheme,
+        mode: action.payload?.mode || initialState.mode,
       };
     case SET_AUTH_LOADING:
       return {
@@ -47,6 +56,21 @@ export default function authReducer(state = initialState, action: any) {
       };
     case RESET_AUTH:
       return { ...initialState };
+    case SET_THEME:
+      return {
+        ...state,
+        activeTheme: action.payload,
+      };
+    case SET_MODE:
+      return {
+        ...state,
+        mode: action.payload,
+      };
+    case SET_NEW_THEME:
+      return {
+        ...state,
+        themes: { ...state.themes, ...action.payload }
+      };
     default:
       return state;
   }
@@ -73,3 +97,18 @@ export const setAuthDetails = (details: any) => ({
 });
 
 export const resetAuth = () => ({ type: RESET_AUTH });
+
+export const setTheme = (theme) => ({
+  type: SET_THEME,
+  payload: theme,
+});
+
+export const setThemeMode = (mode) => ({
+  type: SET_MODE,
+  payload: mode,
+});
+export const setNewTheme = (theme) => ({
+  type: SET_NEW_THEME,
+  payload: theme,
+});
+

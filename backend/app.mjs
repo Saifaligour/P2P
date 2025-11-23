@@ -2,7 +2,7 @@
 
 import {
   CREATE_GROUP, CREATE_INVITE, FETCH_GROUP_DETAILS, FETCH_USER_DETAILS,
-  JOIN_GROUP, READ_MESSAGE_FROM_STORE, RECEIVE_MESSAGE, REGISTER_USER, SEND_MESSAGE
+  JOIN_GROUP, READ_MESSAGE_FROM_STORE, RECEIVE_MESSAGE, REGISTER_USER, SAVE_THEME, SEND_MESSAGE
 } from '../constants/command.mjs';
 import { CONFIG, parseArgs } from '../constants/config.mjs';
 import { GROUP_INFO, GROUP_STORE, USER_INFO } from '../constants/index.mjs';
@@ -103,7 +103,7 @@ class App {
     this.log('loadBase', `Base loaded for group ${groupId}`);
     base.on('member-add', (key) => this.handleMemberAdd(key, groupId));
     base.on('update', () => this.newMessageFromPeer(groupId));
-    this.networkManager.join(base.discoveryKey);
+    this.networkManager?.join(base.discoveryKey);
     this.log('loadBase', 'Base ready');
     this.bases.set(groupId, base);
     if (exist) {
@@ -249,6 +249,23 @@ class App {
     }
   }
 
+  async saveThemeHnadler(theme) {
+    this.log('saveThemeHnadler', 'Registering user', theme);
+    try {
+      const db = await this.storeManager.initDB(USER_INFO);
+      const existsUser = await db.get(USER_INFO);
+      if (!existsUser?.value)
+        return { success: false, status: 400, message: 'User not found' };
+      const _user = { ...existsUser.value, ...theme };
+      await db.put(USER_INFO, _user);
+      this.log('saveThemeHnadler', 'Theme updated successfully');
+      return { success: true, status: 200, message: 'Theme updated successfully' };
+    } catch (error) {
+      this.log('saveThemeHnadler', 'Error registering user', error);
+      return { success: false, status: 500, message: 'Internal error', error: error.message };
+    }
+  }
+
   async userDetailHandler() {
     this.log('userDetailHandler', 'Fetching user details');
     try {
@@ -341,6 +358,7 @@ class App {
     this._registered = true;
     this.log('registerRPC', 'Registering RPC handlers');
 
+    this.RPC.onRequest(SAVE_THEME, this.saveThemeHnadler.bind(this));
     this.RPC.onRequest(REGISTER_USER, this.registerUserHandler.bind(this));
     this.RPC.onRequest(FETCH_USER_DETAILS, this.userDetailHandler.bind(this));
     this.RPC.onRequest(FETCH_GROUP_DETAILS, this.getGroupDetailsHandler.bind(this));
