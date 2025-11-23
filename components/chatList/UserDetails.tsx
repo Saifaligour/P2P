@@ -1,21 +1,19 @@
 import { RECEIVE_MESSAGE } from "@/constants/command.mjs";
 import { rpcService } from "@/hooks/RPC";
 import { User } from "@/hooks/useChatList";
-import { styles } from "@/style/ChatListStyles";
-import React, { memo, useEffect, useState } from "react";
+import { createGroupStyle } from "@/style/ChatListStyles";
+import React, { memo, useEffect, useMemo, useState } from "react";
 import { Image, Text, TouchableOpacity, View } from "react-native";
 
 type UserRowProps = {
-  user: User;
+  item: User;
   onPress: (user: User) => void;
+  theme: any,
+  s: (size: number) => number;
 };
 
-const OnlineIndicator = () => <View style={styles.onlineDot} />;
-const ReadIndicator = () => <Text style={styles.checkMark}>✓✓</Text>;
-const EmptySpace = () => <View style={{ width: 18 }} />;
-
-export const UserRow: React.FC<UserRowProps> = memo(({ user, onPress }) => {
-  const [message, setMessage] = useState(user.message);
+export const UserRow: React.FC<UserRowProps> = memo(({ item, onPress, theme, s }) => {
+  const [message, setMessage] = useState(item.message);
 
   // Separate function for message subscription
   const subscribeToMessages = (user, setMessage) => {
@@ -35,48 +33,42 @@ export const UserRow: React.FC<UserRowProps> = memo(({ user, onPress }) => {
   };
 
   useEffect(() => {
-    subscribeToMessages(user, setMessage);
-  }, [user]);
+    subscribeToMessages(item, setMessage);
+  }, [item]);
 
+  const styles = useMemo(() => createGroupStyle(theme, s), [theme, s]);
+  console.log(item);
+  // const OnlineIndicator = () => <View style={styles.onlineDot} />;
+  const ReadIndicator = () => <Text style={styles.checkMark}>✓✓</Text>;
+  const EmptySpace = () => <View style={{ width: 18 }} />;
   return (
-    <TouchableOpacity
-      style={styles.chatRow}
-      onPress={() => onPress(user)}
-      activeOpacity={0.7}
-    >
-      <View style={styles.avatarContainer}>
-        {user.avatarType === 'name' ? (
-          <View style={styles.avatarFallback}>
-            <Text style={styles.avatarFallbackText}>
-              {user.name ? user.name.charAt(0).toUpperCase() : '?'}
-            </Text>
+    <TouchableOpacity onPress={() => onPress(item)} style={styles.container} activeOpacity={0.7}>
+      {item.avatarType === "name" ? (
+        <View style={styles.avatarFallback}>
+          <Text> {item.name ? item.name.charAt(0).toUpperCase() : "?"}</Text>
+        </View>
+      ) : (
+        <Image source={{ uri: item.avatar }} style={styles.avatar} />
+      )}
+      {/* {!item.isOnline && <OnlineIndicator />} */}
+      <View style={styles.info}>
+        <Text style={styles.name}>{item.name}</Text>
+        <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+          {item.isRead ? <ReadIndicator /> : <EmptySpace />}
+          <Text numberOfLines={1} ellipsizeMode="tail" style={styles.last}>{message}</Text>
+        </View>
+      </View>
+      <View style={styles.rightColumn}>
+        <Text style={styles.time}>
+          {item.time}
+        </Text>
+        {item.unreadCount > 0 ? (
+          <View style={styles.badge}>
+            <Text style={styles.badgeText}>{item.unreadCount}</Text>
           </View>
         ) : (
-          <Image
-            source={{ uri: user.avatar }}
-            style={styles.avatar}
-            resizeMode="cover"
-          />
+          <Text style={styles.memberText}>{item.unreadCount}</Text>
         )}
-        {user.isOnline && <OnlineIndicator />}
-      </View>
-
-      <View style={styles.chatContent}>
-        <View style={styles.chatHeader}>
-          <Text style={styles.chatName} numberOfLines={1}>
-            {user.name}
-          </Text>
-          <Text style={styles.chatTime}>
-            {user.time}
-          </Text>
-        </View>
-
-        <View style={styles.chatFooter}>
-          {user.isRead ? <ReadIndicator /> : <EmptySpace />}
-          <Text style={styles.chatMessage} numberOfLines={1}>
-            {message}
-          </Text>
-        </View>
       </View>
     </TouchableOpacity>
   );

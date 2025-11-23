@@ -21,6 +21,7 @@ export interface User {
   isGroup?: boolean;
   groupAdmin?: string; // user id
   createdAt?: string;
+  unreadCount?: number;
 }
 
 interface RootState {

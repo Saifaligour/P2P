@@ -1,48 +1,102 @@
 import { Platform, StyleSheet } from "react-native";
 
-export const styles = StyleSheet.create({
-  safe: {
+export const createStyle = (theme: any, s: any) => StyleSheet.create({
+  safeArea: {
+    paddingTop: Platform.OS === 'ios' ? 60 : 40,
+    backgroundColor: theme.bg,
     flex: 1,
-    backgroundColor: "#f4f7fc",
   },
+  headerRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 18,
+  },
+  title: {
+    fontSize: s(28),
+    fontWeight: '800',
+    color: theme.text,
+  },
+  themeSwitch: {
+    backgroundColor: theme.sentLight + '44',
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: 20,
+  },
+  themeText: {
+    color: theme.sentLight,
+    fontWeight: '700',
+  },
+  list: {
+    paddingBottom: 24,
+  },
+  themeSwitchRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+
+})
+
+export const createGroupStyle = (theme: any, s: any) => StyleSheet.create({
   container: {
-    flex: 1,
-    paddingHorizontal: 16,
-  },
-  searchWrapper: {
-    backgroundColor: "#fff",
-    borderRadius: 15,
-    paddingHorizontal: 16,
-    paddingVertical: Platform.OS === "ios" ? 10 : 3,
-    marginBottom: 10,
-    marginTop: Platform.OS === "ios" ? 10 : 6,
-    elevation: 1,
-  },
-  searchInput: {
-    fontSize: 16,
-    color: "#000",
-  },
-  chatRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    paddingVertical: 12,
-    paddingHorizontal: 8,
-    backgroundColor: "#fff",
-    borderRadius: 12,
-    shadowColor: "#000",
-    shadowOpacity: 0.05,
-    shadowOffset: { width: 0, height: 1 },
-    shadowRadius: 2,
-    elevation: 1,
-  },
-  avatarContainer: {
-    position: "relative",
-    marginRight: 12,
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: s(12),
   },
   avatar: {
-    width: 52,
-    height: 52,
-    borderRadius: 26,
+    width: s(56),
+    height: s(56),
+    borderRadius: s(28),
+    borderWidth: 2,
+    borderColor: theme.sent,
+  },
+  avatarFallback: {
+    width: s(56),
+    height: s(56),
+    borderRadius: s(28),
+    borderWidth: 2,
+    backgroundColor: theme.received,
+    borderColor: theme.sent,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  checkMark: {
+    fontSize: s(16),
+    color: theme.sent,
+    marginRight: 6,
+  },
+  info: {
+    flex: 1,
+    marginLeft: s(12),
+  },
+  name: {
+    fontSize: s(16),
+    fontWeight: '700',
+    color: theme.text,
+  },
+  last: {
+    fontSize: s(13),
+    color: theme.muted,
+    marginTop: s(4),
+  },
+  rightColumn: {
+    justifyContent: 'center',
+    alignItems: 'flex-end',
+    height: s(56),
+  },
+  time: {
+    color: theme.muted,
+    fontSize: s(12),
+  },
+  badge: {
+    backgroundColor: theme.sent,
+    paddingHorizontal: s(8),
+    paddingVertical: s(4),
+    borderRadius: s(12),
+    minWidth: s(28),
+    alignItems: 'center',
+    marginTop: s(4),
   },
   onlineDot: {
     position: "absolute",
@@ -51,56 +105,49 @@ export const styles = StyleSheet.create({
     width: 12,
     height: 12,
     borderRadius: 6,
-    backgroundColor: "#34C759",
+    backgroundColor: theme.sent,
     borderWidth: 2,
     borderColor: "#fff",
   },
-  avatarFallback: {
-    width: 52,
-    height: 52,
-    borderRadius: 26,
-    backgroundColor: "#d1d5db",
-    alignItems: "center",
-    justifyContent: "center",
+  badgeText: {
+    color: '#fff',
+    fontSize: s(12),
+    fontWeight: '700',
   },
-  avatarFallbackText: {
-    fontSize: 24,
-    color: "#555",
-    fontWeight: "700",
+  memberText: {
+    color: theme.muted,
+    fontSize: s(12),
+    marginTop: s(4),
   },
-  chatContent: {
+});
+
+export const searchGroupStyle = (theme: any, s: any) => StyleSheet.create({
+  inputContainer: {
+    // position: 'absolute',
+    // top: Platform.OS === 'ios' ? 10 : 10,
+    // left: 6,
+    // right: 6,
+    backgroundColor: theme.inputBg,
+    borderRadius: 30,
+    paddingHorizontal: 18,
+    paddingVertical: 12,
+    flexDirection: 'row',
+    alignItems: 'center',
+    borderWidth: 0.30,
+    borderColor: theme.inputBorder,
+    // shadowColor: theme.sent,
+    shadowOpacity: 0.05,
+    shadowRadius: 40,
+    elevation: 18,
+    marginHorizontal: 18,
+  },
+  textInput: {
     flex: 1,
-    justifyContent: "center",
-  },
-  chatHeader: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-  },
-  chatName: {
-    fontSize: 16,
-    fontWeight: "600",
-    color: "#111",
-  },
-  chatTime: {
-    fontSize: 13,
-    color: "#999",
-  },
-  chatFooter: {
-    flexDirection: "row",
-    alignItems: "center",
-    marginTop: 4,
-  },
-  checkMark: {
-    fontSize: 13,
-    color: "#007AFF",
-    marginRight: 6,
-  },
-  chatMessage: {
-    fontSize: 14,
-    color: "#555",
-    flexShrink: 1,
-  },
-  separator: {
-    height: 10,
+    color: theme.text,
+    fontSize: s(17),
+    marginLeft: 12,
+    fontWeight: '500',
+    fontFamily: 'system',
+    paddingTop: 2,
   },
 });

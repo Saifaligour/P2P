@@ -1,21 +1,25 @@
-import { styles } from "@/style/ChatListStyles";
-import React from "react";
+import { searchGroupStyle } from "@/style/ChatListStyles";
+import React, { useMemo } from "react";
 import { TextInput, View } from "react-native";
 
 interface SearchBarProps {
   value: string;
   onChange: (text: string) => void;
+  theme: any;
+  s: (size: number) => number;
 }
 
-export default function SearchBar({ value, onChange }: SearchBarProps) {
+export default function SearchBar({ value, onChange, theme, s }: SearchBarProps) {
+  const styles = useMemo(() => searchGroupStyle(theme, s), [theme, s]);
+
   return (
-    <View style={styles.searchWrapper}>
+    <View style={styles.inputContainer} pointerEvents="box-none">
       <TextInput
-        style={styles.searchInput}
-        placeholder="Search"
-        placeholderTextColor="#999"
+        placeholder="Search..."
+        placeholderTextColor={theme.sentLight + '88'}
         value={value}
         onChangeText={onChange}
+        style={styles.textInput}
         clearButtonMode="while-editing"
       />
     </View>
