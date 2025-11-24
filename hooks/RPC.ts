@@ -100,14 +100,14 @@ class RPCManager {
   public send(command: number, data: any): any {
     if (!this.rpc) throw new Error('RPC not initialized.');
     const cmd = getCommand(command);
-    console.log('Sending RPC request:', cmd);
+    // console.log('Sending RPC request:', cmd);
     const req = this.rpc.request(command);
     req.send(this.encode(data));
     return {
       reply: async () => {
         const reply = await req.reply();
         const rep = this.decode(reply, cmd);
-        console.log('Received RPC reply:', cmd, rep);
+        // console.log('Received RPC reply:', cmd, rep);
         return rep;
       }
     }
