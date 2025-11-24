@@ -36,3 +36,5 @@ export const {
 export function getCommand(value) {
     return Object.keys(COMMANDS).find(key => COMMANDS[key] === value);
 }
+
+export const DEBUG_MODE = false;

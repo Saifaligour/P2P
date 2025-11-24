@@ -27,7 +27,6 @@ export function useThemeColor() {
     await rpcService.send(SAVE_THEME, { mode: value }).reply();
     dispatch(setThemeMode(value));
   };
-  console.log('theme in useThemeColor:', activeTheme, mode, themes);
 
   return {
     s,

@@ -1,5 +1,5 @@
 
-import { RPC_LOG } from "@/constants/command.mjs";
+import { DEBUG_MODE, RPC_LOG } from "@/constants/command.mjs";
 import { rpcService } from "@/hooks/RPC";
 import store from "@/Redux/store"; // Adjust path accordingly
 import { formatLogs } from "@/utils/helpter";
@@ -9,6 +9,7 @@ import { Provider } from "react-redux";
 
 export default function App() {
   useEffect(() => {
+    if (!DEBUG_MODE) return;
     rpcService.onRequest(RPC_LOG, (data: any) => formatLogs(data));
   }, []);
   return (

@@ -62,13 +62,11 @@ export const UserRow: React.FC<UserRowProps> = memo(({ item, onPress, theme, s }
         <Text style={styles.time}>
           {item.time}
         </Text>
-        {item.unreadCount > 0 ? (
+        {item.unreadCount > 0 &&
           <View style={styles.badge}>
             <Text style={styles.badgeText}>{item.unreadCount}</Text>
           </View>
-        ) : (
-          <Text style={styles.memberText}>{item.unreadCount}</Text>
-        )}
+        }
       </View>
     </TouchableOpacity>
   );
