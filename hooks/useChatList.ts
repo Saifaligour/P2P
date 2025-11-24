@@ -57,9 +57,9 @@ export const useUserList = () => {
   };
 
   const fetchList = async () => {
-    console.log(`Inside fetchList method`);
+    console.log(`useChatList, fetchList, Inside fetchList method`);
     const users = await rpcService.send(FETCH_GROUP_DETAILS, {}).reply();
-    console.log('users', users, users.length);
+    console.log(`useChatList, fetchList, Inside fetchList method, users`, users, users.length);
     if (users?.length)
       dispatch(setUserList(users));
 
