@@ -53,7 +53,7 @@ export const useChat = () => {
   // }, [])
 
   const sendMessage = async () => {
-    console.log('Send message called', text);
+    console.log('useChat, sendMessage, Send message called', text);
 
     if (!text.trim()) return;
     const now = new Date().toLocaleTimeString([], {
@@ -70,7 +70,7 @@ export const useChat = () => {
       groupId: activeUser?.groupId,
     };
     try {
-      console.log('Send message', newMessage);
+      console.log('useChat, sendMessage, Send message', newMessage);
       rpcService.send(SEND_MESSAGE, newMessage);
     } catch {
       console.error('Failed to send message:');

@@ -37,7 +37,7 @@ export const UserRow: React.FC<UserRowProps> = memo(({ item, onPress, theme, s }
   }, [item]);
 
   const styles = useMemo(() => createGroupStyle(theme, s), [theme, s]);
-  console.log(item);
+  console.log('UserDetails, UserRow, item', item);
   // const OnlineIndicator = () => <View style={styles.onlineDot} />;
   const ReadIndicator = () => <Text style={styles.checkMark}>✓✓</Text>;
   const EmptySpace = () => <View style={{ width: 18 }} />;

@@ -23,11 +23,6 @@ export const chatReducer = (state = initialState, action) => {
       };
     }
     case ADD_MESSAGE: {
-      console.log('ADD_MESSAGE debug:', {
-        activeUser: state.activeUser,
-        payload: action.payload,
-        isMatch: state.activeUser && action.payload && state.activeUser.groupId === action.payload.groupId
-      });
       if (state.activeUser && action.payload && state.activeUser.groupId === action.payload.groupId) {
         // action.payload is a single message {id, ...}
         const msgMap = new Map(state.messages);

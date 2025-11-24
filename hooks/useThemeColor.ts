@@ -17,7 +17,7 @@ export function useThemeColor() {
     const keys = Object.keys(themes);
     const current = keys.indexOf(activeTheme);
     const next = (current + 1) % keys.length;
-    console.log('Switching theme from', activeTheme, 'to', keys[next]);
+    console.log('useThemeColor, Switching theme from', activeTheme, 'to', keys[next]);
     await rpcService.send(SAVE_THEME, { activeTheme: keys[next] }).reply();
     dispatch(setTheme(keys[next]));
   };

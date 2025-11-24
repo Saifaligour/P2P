@@ -53,6 +53,8 @@ const Header = memo(({ activeUser, connection, createInvite, styles, theme, s, g
 Header.displayName = "Header";
 
 const Message = memo(({ item, userId, styles, theme, s }: any) => {
+  console.log('ChatScreen,Index, Inside Message method', item);
+
   if (item.type === 'system') {
     return (
       <View style={styles.systemMessageContainer}>
