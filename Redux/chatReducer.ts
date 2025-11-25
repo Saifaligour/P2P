@@ -7,6 +7,7 @@ const ADD_MESSAGE_IN_BATCH = 'ADD_MESSAGE_IN_BATCH';
 const initialState = {
   messages: new Map(),
   activeUser: null,
+  connection: {},
 };
 
 export const chatReducer = (state = initialState, action) => {
