@@ -34,7 +34,7 @@ export const useAuth = () => {
     try {
       const res = await rpcService.send(REGISTER_USER, credentials).reply();
       if (res?.status) {
-        router.replace('/home/ChatListScreen/groupList');
+        router.replace('/home/ChatListScreen/userList');
       }
       return true;
     } catch (error) {
@@ -50,7 +50,7 @@ export const useAuth = () => {
     const res = await rpcService.send(FETCH_USER_DETAILS, {}).reply();
     if (res?.data) {
       dispatch(setAuthDetails(res.data));
-      router.replace("/home/ChatListScreen/groupList");
+      router.replace("/home/ChatListScreen/userList");
     }
     else {
       router.replace("/login");
