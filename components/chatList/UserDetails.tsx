@@ -19,7 +19,7 @@ export const UserRow: React.FC<UserRowProps> = memo(({ item, theme, s }) => {
   const ReadIndicator = () => <Text style={styles.checkMark}>✓✓</Text>;
   const EmptySpace = () => <View style={{ width: 18 }} />;
   return (
-    <TouchableOpacity onPress={() => handleOpenChat(item)} style={styles.container} activeOpacity={0.7}>
+    <TouchableOpacity onPress={handleOpenChat} style={styles.container} activeOpacity={0.7}>
       {item.avatarType === "name" ? (
         <View style={styles.avatarFallback}>
           <Text> {item.name ? item.name.charAt(0).toUpperCase() : "?"}</Text>

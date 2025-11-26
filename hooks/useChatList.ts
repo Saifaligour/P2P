@@ -63,8 +63,8 @@ export const useRow = (item) => {
   const dispatch = useDispatch();
   const [message, setMessage] = useState(item.message);
 
-  const handleOpenChat = (user: User) => {
-    dispatch(setActiveUser(user));
+  const handleOpenChat = () => {
+    dispatch(setActiveUser(item));
     router.push("/home/ChatScreen");
   };
 
