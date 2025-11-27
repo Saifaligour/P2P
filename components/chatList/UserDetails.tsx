@@ -32,12 +32,12 @@ export const UserRow: React.FC<UserRowProps> = memo(({ item, theme, s }) => {
         <Text style={styles.name}>{item.name}</Text>
         <View style={{ flexDirection: 'row', alignItems: 'center' }}>
           {item.isRead ? <ReadIndicator /> : <EmptySpace />}
-          <Text numberOfLines={1} ellipsizeMode="tail" style={styles.last}>{item.message}</Text>
+          <Text numberOfLines={1} ellipsizeMode="tail" style={styles.last}>{item?.message?.text}</Text>
         </View>
       </View>
       <View style={styles.rightColumn}>
         <Text style={styles.time}>
-          {item.time}
+          {item?.message?.timestamp || item.time}
         </Text>
         {item.unreadCount > 0 &&
           <View style={styles.badge}>

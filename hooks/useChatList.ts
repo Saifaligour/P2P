@@ -9,7 +9,7 @@ export interface User {
   id: string;
   groupId: string;
   name: string;
-  message: string;
+  message: any;
   time: string;
   avatar: string;
   isOnline: boolean;
@@ -110,31 +110,36 @@ const fetchList: any = () => async (dispatch: any) => {
   console.log(`useChatList, fetchList, Inside fetchList method called`);
   const users = await rpcService.send(FETCH_GROUP_DETAILS, {}).reply();
   console.log(`useChatList, fetchList, Inside fetchList method, users`, users, users.length);
-  if (users?.length)
+  if (users?.length) {
+    sort(users)
+    console.log('user afte sort ', users);
+
     dispatch(setUserList(users));
+  }
 }
 
-const updateGroupRow: any = (msg: any) => (dispatch: any, getState: any) => {
+const updateGroupRow: any = (message: any) => (dispatch: any, getState: any) => {
   const { users } = getState().userList;
 
   // Update the correct row
   const updated = users.map((u) =>
-    u.groupId === msg.groupId
+    u.groupId === message.groupId
       ? {
         ...u,
-        message: msg.text,      // keep your existing fields
-        time: msg.timestamp,    // keep your existing fields
+        message,      // keep your existing fields
       }
       : u
   );
 
-  // Auto-sort groups: latest time at top
-  updated.sort((a, b) => {
-    const t1 = new Date(a.time).getTime();
-    const t2 = new Date(b.time).getTime();
-    return t2 - t1; // latest first
-  });
-
-  console.log("useChatList updateGroupRow sorted row for group", msg.groupId);
+  sort(updated)
+  console.log("useChatList updateGroupRow sorted row for group", message.groupId);
   dispatch(setUserList(updated));
 };
+
+function sort(list: any) {
+  list.sort((a, b) => {
+    const t1 = (a.message.id || a.time);
+    const t2 = (b.message.id || b.time);
+    return t2 - t1; // latest first
+  });
+}

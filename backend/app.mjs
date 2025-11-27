@@ -110,7 +110,7 @@ class App {
       await base.view.core.ready()
       const lastMsg = await base.view.core.get(base.view.core.length - 1)
       const { value } = decode(lastMsg)
-      group.message = value.text || 'loading...'
+      group.message = value || {}
     }
     Promise.all([group.members.map(g => {
       this.log('loadBase', `adding new meber in group ${groupId}`)
