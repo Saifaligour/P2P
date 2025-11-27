@@ -11,7 +11,7 @@ type UserRowProps = {
 };
 
 export const UserRow: React.FC<UserRowProps> = memo(({ item, theme, s }) => {
-  const { handleOpenChat, message } = useRow(item)
+  const { handleOpenChat } = useRow(item)
 
   const styles = useMemo(() => createGroupStyle(theme, s), [theme, s]);
   console.log('UserDetails, UserRow, item', item);
@@ -32,7 +32,7 @@ export const UserRow: React.FC<UserRowProps> = memo(({ item, theme, s }) => {
         <Text style={styles.name}>{item.name}</Text>
         <View style={{ flexDirection: 'row', alignItems: 'center' }}>
           {item.isRead ? <ReadIndicator /> : <EmptySpace />}
-          <Text numberOfLines={1} ellipsizeMode="tail" style={styles.last}>{message}</Text>
+          <Text numberOfLines={1} ellipsizeMode="tail" style={styles.last}>{item.message}</Text>
         </View>
       </View>
       <View style={styles.rightColumn}>

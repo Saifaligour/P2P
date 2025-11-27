@@ -2,7 +2,7 @@ import { setActiveUser } from "@/Redux/chatReducer";
 import { setSearch, setUserList } from "@/Redux/userListReducer";
 import { FETCH_GROUP_DETAILS, RECEIVE_MESSAGE } from '@/constants/command.mjs';
 import { useRouter } from "expo-router";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { rpcService } from "./RPC";
 export interface User {
@@ -41,18 +41,22 @@ export const useUserList = () => {
     return (users || []).filter((user) => user.name.toLowerCase().includes(lowerSearch));
   }, [search, users]);
 
-  const fetchList = async () => {
-    console.log(`useChatList, fetchList, Inside fetchList method`);
-    const users = await rpcService.send(FETCH_GROUP_DETAILS, {}).reply();
-    console.log(`useChatList, fetchList, Inside fetchList method, users`, users, users.length);
-    if (users?.length)
-      dispatch(setUserList(users));
-
-  }
   useEffect(() => {
-    fetchList()
-  }, [])
 
+    dispatch(fetchList())
+    const unSubscribe = rpcService.subscribe(RECEIVE_MESSAGE, (data: any) => {
+      if (data) {
+        if (Array.isArray(data.message)) {
+          console.log('useChatList, useRow, hook: RECEIVE_MESSAGE batch', data);
+          dispatch(updateGroupRow(data.message[0]));
+        } else {
+          console.log('useChatList, useRow hook: RECEIVE_MESSAGE', data);
+          dispatch(updateGroupRow(data.message));
+        }
+      }
+    });
+    return () => unSubscribe();
+  }, []);
   return {
     filteredUsers,
   };
@@ -61,34 +65,12 @@ export const useUserList = () => {
 export const useRow = (item) => {
   const router = useRouter();
   const dispatch = useDispatch();
-  const [message, setMessage] = useState(item.message);
-
   const handleOpenChat = () => {
     dispatch(setActiveUser(item));
     router.push("/home/ChatScreen");
   };
 
-  useEffect(() => {
-    const unSubscribe = rpcService.subscribe(RECEIVE_MESSAGE, (data: any) => {
-      if (data) {
-        if (Array.isArray(data.message)) {
-          if (data.message[0].groupId === item.groupId) {
-            console.log('useChat, hook: RECEIVE_MESSAGE batch', data);
-            setMessage(data.message[0].text);
-          }
-        } else {
-          if (data.message.groupId === item.groupId) {
-            console.log('useChat hook: RECEIVE_MESSAGE', data);
-            setMessage(data.message.text);
-          }
-        }
-      }
-    });
-    return () => unSubscribe();
-  }, []);
-
   return {
-    message,
     handleOpenChat
   }
 };
@@ -121,4 +103,38 @@ export const useSearch = () => {
     search,
     handleSearchChange,
   };
+};
+
+
+const fetchList: any = () => async (dispatch: any) => {
+  console.log(`useChatList, fetchList, Inside fetchList method called`);
+  const users = await rpcService.send(FETCH_GROUP_DETAILS, {}).reply();
+  console.log(`useChatList, fetchList, Inside fetchList method, users`, users, users.length);
+  if (users?.length)
+    dispatch(setUserList(users));
+}
+
+const updateGroupRow: any = (msg: any) => (dispatch: any, getState: any) => {
+  const { users } = getState().userList;
+
+  // Update the correct row
+  const updated = users.map((u) =>
+    u.groupId === msg.groupId
+      ? {
+        ...u,
+        message: msg.text,      // keep your existing fields
+        time: msg.timestamp,    // keep your existing fields
+      }
+      : u
+  );
+
+  // Auto-sort groups: latest time at top
+  updated.sort((a, b) => {
+    const t1 = new Date(a.time).getTime();
+    const t2 = new Date(b.time).getTime();
+    return t2 - t1; // latest first
+  });
+
+  console.log("useChatList updateGroupRow sorted row for group", msg.groupId);
+  dispatch(setUserList(updated));
 };
