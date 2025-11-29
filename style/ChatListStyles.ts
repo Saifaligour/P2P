@@ -44,6 +44,15 @@ export const createGroupStyle = (theme: any, s: any) => StyleSheet.create({
     alignItems: 'center',
     padding: s(12),
   },
+  border: {
+    borderBottomColor: theme.sentLight + '55',
+    shadowColor: theme.sentLight,
+    shadowOpacity: 80,
+    shadowRadius: 20,
+    elevation: 6,
+    borderBottomWidth: 0.3,
+    marginHorizontal: 30
+  },
   avatar: {
     width: s(56),
     height: s(56),

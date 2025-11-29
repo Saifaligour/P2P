@@ -84,10 +84,14 @@ export const useGroupListHeader = () => {
     console.log('useGroupListHeader, handleScanQR method called');
 
   };
+  const handleNaviateToSettings = () => {
+    router.push("/home/Settings");
+  };
 
   return {
     handleScanQR,
     handleCreateGroup,
+    handleNaviateToSettings
   };
 };
 
