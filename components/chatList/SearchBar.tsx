@@ -15,7 +15,7 @@ export default function SearchBar({ theme, s }: SearchBarProps) {
     <View style={styles.inputContainer} pointerEvents="box-none">
       <TextInput
         placeholder="Search..."
-        placeholderTextColor={theme.sentLight + '88'}
+        placeholderTextColor={theme.inputText}
         value={search}
         onChangeText={handleSearchChange}
         style={styles.textInput}

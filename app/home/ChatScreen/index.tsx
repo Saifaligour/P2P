@@ -26,13 +26,17 @@ const Header = memo(({ styles, theme, s }: any) => {
   return (
     <View style={styles.header} pointerEvents="box-none">
       <TouchableOpacity onPress={() => goBack()}>
-        <Ionicons name="arrow-back" size={s(32)} color={theme.sentLight} />
+        <Ionicons name="arrow-back" size={s(32)} color={theme.iconColor} />
       </TouchableOpacity>
       <View style={styles.headerInfo}>
-        <Image
-          source={{ uri: 'https://randomuser.me/api/portraits/men/32.jpg' }}
-          style={styles.avatar}
-        />
+        {activeUser?.avatarType === 'name' ?
+          <View style={styles.avatarFallback}>
+            <Text style={styles.avatarName}> {activeUser.avatar}</Text>
+          </View>
+          : <Image
+            source={{ uri: 'https://randomuser.me/api/portraits/men/32.jpg' }}
+            style={styles.avatar}
+          />}
         <View style={{ marginLeft: 12 }}>
           <Text style={styles.name}>{activeUser ? activeUser.name : 'Chat'}</Text>
           <Text style={styles.status}>Online</Text>
@@ -44,10 +48,10 @@ const Header = memo(({ styles, theme, s }: any) => {
         </View>
       </View>
       <View style={styles.headerActions}>
-        <TouchableOpacity><Ionicons name="videocam" size={s(28)} color={theme.sentLight} /></TouchableOpacity>
-        <TouchableOpacity><Ionicons name="call" size={s(26)} color={theme.sentLight} /></TouchableOpacity>
-        <TouchableOpacity onPress={() => createInvite(activeUser?.groupId)}><Ionicons name="link" size={s(26)} color={theme.sentLight} /></TouchableOpacity>
-        <TouchableOpacity><Ionicons name="ellipsis-vertical" size={s(24)} color={theme.sentLight} /></TouchableOpacity>
+        <TouchableOpacity><Ionicons name="videocam" size={s(28)} color={theme.iconColor} /></TouchableOpacity>
+        <TouchableOpacity><Ionicons name="call" size={s(28)} color={theme.iconColor} /></TouchableOpacity>
+        <TouchableOpacity onPress={() => createInvite(activeUser?.groupId)}><Ionicons name="link" size={s(28)} color={theme.iconColor} /></TouchableOpacity>
+        <TouchableOpacity><Ionicons name="ellipsis-vertical" size={s(28)} color={theme.iconColor} /></TouchableOpacity>
       </View>
     </View>
   );
@@ -78,6 +82,10 @@ const Message = memo(({ item, styles, userId, theme, s }: any) => {
       style={[
         styles.messageContainer,
         isMine ? styles.sentContainer : styles.receivedContainer,
+        {
+          borderTopRightRadius: isMine ? 4 : 20,
+          borderTopLeftRadius: isMine ? 20 : 4,
+        }
       ]}
     >
       <View
@@ -94,8 +102,7 @@ const Message = memo(({ item, styles, userId, theme, s }: any) => {
           style={[
             styles.messageText,
             {
-              color: isMine ? '#FFFFFF' : theme.text,
-              fontWeight: isMine ? '600' : '500',
+              color: isMine ? theme.sentText : theme.receivedText,
             },
           ]}
         >
@@ -103,16 +110,23 @@ const Message = memo(({ item, styles, userId, theme, s }: any) => {
         </Text>
 
         <View style={styles.messageFooter}>
-          <Text style={[styles.timeText, { color: isMine ? '#FFFFFFAA' : theme.muted }]}>
+          <Text
+            style={[
+              styles.timeText,
+              { color: isMine ? theme.sentTime : theme.receivedTime },
+            ]}
+            numberOfLines={1}
+          >
             {item.timestamp}
           </Text>
 
           {isMine && (
             <Ionicons
               name="checkmark-done"
-              size={s(18)}
-              color={isMine ? theme.sentLight : theme.muted}
-              style={{ marginLeft: 4 }}
+              size={s(16)}
+              color={theme.badgeColor}
+              style={styles.checkmark}
+
             />
           )}
         </View>
@@ -130,12 +144,12 @@ const InputBar = memo(({ scrollToBottom, styles, theme, s, }: any) => {
   return (
     <View style={styles.inputContainer}>
       <TouchableOpacity>
-        <Ionicons name="add-circle-outline" size={s(30)} color={theme.sentLight} />
+        <Ionicons name="add-circle-outline" size={s(30)} color={theme.iconColor} />
       </TouchableOpacity>
 
       <TextInput
         placeholder="Type a message..."
-        placeholderTextColor={theme.sentLight + '88'}
+        placeholderTextColor={theme.inputText}
         value={text}
         onChangeText={setText}
         style={styles.textInput}
@@ -144,20 +158,18 @@ const InputBar = memo(({ scrollToBottom, styles, theme, s, }: any) => {
 
       {text.trim() ? (
         <TouchableOpacity onPress={handleSendText}>
-          <View style={styles.sendButton}>
-            <Ionicons name="send" size={s(26)} color="white" />
-          </View>
+          <Ionicons name="send" size={s(26)} color={theme.iconColor} />
         </TouchableOpacity>
       ) : (
         <View style={styles.inputActions}>
           <TouchableOpacity style={styles.iconButton} onPress={() => handleSendEmoji('😊')}>
-            <Ionicons name="happy-outline" size={s(26)} color={theme.sentLight} />
+            <Ionicons name="happy-outline" size={s(26)} color={theme.iconColor} />
           </TouchableOpacity>
           <TouchableOpacity>
-            <Ionicons name="camera-outline" size={s(26)} color={theme.sentLight} />
+            <Ionicons name="camera-outline" size={s(26)} color={theme.iconColor} />
           </TouchableOpacity>
           <TouchableOpacity>
-            <Ionicons name="mic-outline" size={s(26)} color={theme.sentLight} />
+            <Ionicons name="mic-outline" size={s(26)} color={theme.iconColor} />
           </TouchableOpacity>
         </View>
       )}

@@ -23,6 +23,7 @@ export function wait(ms = 100) {
     return new Promise(resolve => setTimeout(resolve, ms));
 }
 
+// this._discovery = new Map_W()
 class Map_W extends Map {
     constructor() {
         super();
@@ -46,6 +47,7 @@ class Map_W extends Map {
     }
 }
 
+// this.connections = new Set_W()
 class Set_W extends Set {
     constructor() {
         super();

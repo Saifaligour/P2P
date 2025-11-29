@@ -1,7 +1,8 @@
 import { IconSymbol } from "@/components/ui/IconSymbol";
 import { useGroupListHeader } from "@/hooks/useChatList";
+import { headerStyle } from "@/style/ChatListStyles";
 import { Ionicons } from '@expo/vector-icons';
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import {
   Animated,
   Dimensions,
@@ -18,6 +19,7 @@ const { width, height } = Dimensions.get('window');
 export const GroupListHeader = ({ theme, s }: { theme: any; s: any }) => {
   const { handleCreateGroup, handleScanQR, handleNaviateToSettings } = useGroupListHeader();
   const [menuVisible, setMenuVisible] = useState(false);
+  const styles = useMemo(() => headerStyle(theme, s), [theme, s]);
 
   const menuItems = [
     { label: "New Group", action: handleCreateGroup },
@@ -26,26 +28,18 @@ export const GroupListHeader = ({ theme, s }: { theme: any; s: any }) => {
   ];
 
   return (
-    <View style={{
-      flexDirection: 'row',
-      alignItems: 'center',
-      justifyContent: 'space-between',
-      marginBottom: 8,
-      paddingTop: Platform.OS === 'ios' ? 0 : 40,
-      zIndex: 10,
-      paddingHorizontal: 12,
-    }}>
+    <View style={styles.header}>
       <View style={{ width: 32 }} />
 
-      <View style={{ flexDirection: 'row', gap: 16 }}>
+      <View style={styles.iconMenu}>
         <TouchableOpacity onPress={handleCreateGroup}>
-          <IconSymbol name="plus" size={26} color={theme.sentLight} />
+          <IconSymbol name="plus" size={26} color={theme.iconColor} />
         </TouchableOpacity>
         <TouchableOpacity onPress={handleScanQR}>
-          <IconSymbol name="qrcode" size={26} color={theme.sentLight} />
+          <IconSymbol name="qrcode" size={26} color={theme.iconColor} />
         </TouchableOpacity>
         <TouchableOpacity onPress={() => setMenuVisible(prev => !prev)}>
-          <Ionicons name="ellipsis-vertical" size={26} color={theme.sentLight} />
+          <Ionicons name="ellipsis-vertical" size={26} color={theme.iconColor} />
         </TouchableOpacity>
       </View>
 
@@ -122,11 +116,11 @@ const createDropdownStyles = (theme: any, s: any) =>
       position: 'absolute',
       top: Platform.OS === 'ios' ? 60 : 80, // adjust below header
       right: 12,
-      backgroundColor: theme.bgCard || theme.inputBg,
+      backgroundColor: theme.modalBg,
       borderRadius: 12,
       borderWidth: 0.5,
-      borderColor: theme.inputBorder + '55',
-      shadowColor: theme.text,
+      borderColor: theme.modalBg,
+      shadowColor: theme.modalBg,
       shadowOpacity: 0.05,
       shadowRadius: 20,
       elevation: 6,
@@ -139,11 +133,11 @@ const createDropdownStyles = (theme: any, s: any) =>
       paddingHorizontal: 12,
       paddingVertical: 10,
       borderBottomWidth: 0.3,
-      borderBottomColor: theme.inputBorder + '55',
+      borderBottomColor: theme.border,
     },
     itemText: {
       fontSize: 15,
-      color: theme.text,
+      color: theme.textSecondary,
       fontWeight: '600',
     },
   });

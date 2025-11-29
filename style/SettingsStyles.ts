@@ -1,5 +1,4 @@
 import { StyleSheet } from 'react-native';
-import { fonts } from './ChatStyles';
 
 export const createSettingsStyle = (theme: any, s: any) =>
     StyleSheet.create({
@@ -32,13 +31,13 @@ export const createSettingsStyle = (theme: any, s: any) =>
             height: s(48),
             borderRadius: 24,
             borderWidth: 3,
-            borderColor: theme.sentLight,
+            borderColor: theme.avatarBroder,
         },
         name: {
             color: theme.text,
             fontSize: s(20),
             fontWeight: '800',
-            fontFamily: fonts.extraBold,
+            fontFamily: theme.fontFamily,
         },
         profileWrapper: {
             flexDirection: 'row',
@@ -46,11 +45,11 @@ export const createSettingsStyle = (theme: any, s: any) =>
             padding: 18,
             borderRadius: 20,
             marginHorizontal: 14,
-            backgroundColor: theme.inputBg,
+            backgroundColor: theme.bgSecondary,
             borderWidth: 1,
-            borderColor: theme.inputBorder,
+            borderColor: theme.avatarBroder,
             marginBottom: 10,
-            shadowColor: theme.sent,
+            shadowColor: theme.avatarBroder,
             shadowOpacity: 0.08,
             shadowRadius: 12,
             elevation: 3,
@@ -60,7 +59,7 @@ export const createSettingsStyle = (theme: any, s: any) =>
             height: s(58),
             borderRadius: 29,
             borderWidth: 3,
-            borderColor: theme.sentLight,
+            borderColor: theme.bgSecondary,
         },
         profileName: {
             fontSize: s(20),
@@ -69,7 +68,7 @@ export const createSettingsStyle = (theme: any, s: any) =>
         },
         profileStatus: {
             fontSize: s(13),
-            color: theme.sentLight,
+            color: theme.bgSecondary,
             marginTop: 2,
         },
 
@@ -79,13 +78,12 @@ export const createSettingsStyle = (theme: any, s: any) =>
             justifyContent: 'space-between',
             paddingHorizontal: 20,
             paddingVertical: 18,
-            backgroundColor: theme.inputBg,
             borderRadius: 20,
             marginHorizontal: 14,
             marginVertical: 6,
             borderWidth: 1,
-            borderColor: theme.inputBorder,
-            shadowColor: '#000',
+            borderColor: theme.border,
+            shadowColor: theme.shadowColor,
             shadowOpacity: 0.05,
             shadowRadius: 10,
             elevation: 2,
@@ -98,7 +96,7 @@ export const createSettingsStyle = (theme: any, s: any) =>
             width: s(38),
             height: s(38),
             borderRadius: 19,
-            backgroundColor: theme.sent + '22',
+            backgroundColor: theme.bgSecondary,
             justifyContent: 'center',
             alignItems: 'center',
             marginRight: 16,
@@ -106,7 +104,7 @@ export const createSettingsStyle = (theme: any, s: any) =>
         rowText: {
             fontSize: s(18),
             fontWeight: '600',
-            color: theme.text,
-            fontFamily: fonts.medium,
+            color: theme.textSecondary,
+            fontFamily: theme.fontFamily,
         },
     });

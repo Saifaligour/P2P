@@ -21,7 +21,7 @@ const GroupChatScreen = () => {
 
   return (
     <View style={styles.safeArea}>
-      <StatusBar barStyle="dark-content" />
+      <StatusBar />
       <GroupListHeader theme={theme} s={s} />
       <SearchBar theme={theme} s={s} />
       <FlatList

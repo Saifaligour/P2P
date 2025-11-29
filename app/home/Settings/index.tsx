@@ -20,7 +20,7 @@ const Header = memo(({ styles, theme, s, nextTheme, setIsDark }: any) => {
         <View style={styles.header} pointerEvents="box-none">
             {/* Back Button */}
             <TouchableOpacity onPress={goBack}>
-                <Ionicons name="arrow-back" size={s(32)} color={theme.sentLight} />
+                <Ionicons name="arrow-back" size={s(32)} color={theme.iconColor} />
             </TouchableOpacity>
 
             {/* Left Profile Section */}
@@ -41,13 +41,13 @@ const Header = memo(({ styles, theme, s, nextTheme, setIsDark }: any) => {
             <View style={styles.headerActions}>
 
                 <TouchableOpacity onPress={nextTheme} style={styles.themeSwitch} activeOpacity={0.8}>
-                    <Ionicons name="color-palette" size={24} color={theme.sentLight} />
+                    <Ionicons name="color-palette" size={24} color={theme.iconColor} />
                 </TouchableOpacity>
                 <TouchableOpacity onPress={setIsDark} style={styles.themeSwitch} activeOpacity={0.8}>
-                    <Ionicons name="color-palette" size={24} color={theme.sentLight} />
+                    <Ionicons name="color-palette" size={24} color={theme.iconColor} />
                 </TouchableOpacity>
                 <TouchableOpacity>
-                    <Ionicons name="ellipsis-vertical" size={s(24)} color={theme.sentLight} />
+                    <Ionicons name="ellipsis-vertical" size={s(24)} color={theme.iconColor} />
                 </TouchableOpacity>
 
             </View>
@@ -66,7 +66,7 @@ const SettingItem = memo(({ item, styles, s, theme }: any) => {
         >
             <View style={styles.rowLeft}>
                 <View style={styles.iconWrapper}>
-                    <Ionicons name={item.icon} size={s(24)} color={theme.sentLight} />
+                    <Ionicons name={item.icon} size={s(24)} color={theme.iconColor} />
                 </View>
                 <Text style={styles.rowText}>{item.title}</Text>
             </View>
@@ -74,7 +74,7 @@ const SettingItem = memo(({ item, styles, s, theme }: any) => {
             <Ionicons
                 name="chevron-forward"
                 size={s(22)}
-                color={theme.sentLight + 'AA'}
+                color={theme.iconColor + 'AA'}
             />
         </TouchableOpacity>
     );

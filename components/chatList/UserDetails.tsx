@@ -1,6 +1,7 @@
 
 import { User, useRow } from "@/hooks/useChatList";
 import { createGroupStyle } from "@/style/ChatListStyles";
+import { Ionicons } from '@expo/vector-icons';
 import React, { memo, useMemo } from "react";
 import { Image, Text, TouchableOpacity, View } from "react-native";
 
@@ -16,14 +17,12 @@ export const UserRow: React.FC<UserRowProps> = memo(({ item, theme, s }) => {
   const styles = useMemo(() => createGroupStyle(theme, s), [theme, s]);
   console.log('UserDetails, UserRow, item', item);
   // const OnlineIndicator = () => <View style={styles.onlineDot} />;
-  const ReadIndicator = () => <Text style={styles.checkMark}>✓✓</Text>;
-  const EmptySpace = () => <View style={{ width: 18 }} />;
   return (
     <>
       <TouchableOpacity onPress={handleOpenChat} style={styles.container} activeOpacity={0.7}>
         {item.avatarType === "name" ? (
           <View style={styles.avatarFallback}>
-            <Text> {item.name ? item.name.charAt(0).toUpperCase() : "?"}</Text>
+            <Text style={styles.avatarName}> {item.name ? item.name.charAt(0).toUpperCase() : "?"}</Text>
           </View>
         ) : (
           <Image source={{ uri: item.avatar }} style={styles.avatar} />
@@ -32,7 +31,14 @@ export const UserRow: React.FC<UserRowProps> = memo(({ item, theme, s }) => {
         <View style={styles.info}>
           <Text style={styles.name}>{item.name}</Text>
           <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-            {item.isRead ? <ReadIndicator /> : <EmptySpace />}
+            {item.isRead ?
+              <View style={{ width: 18 }} />
+              : <Ionicons
+                name="checkmark-done"
+                size={s(16)}
+                color={theme.iconColor}
+                style={styles.checkMark}
+              />}
             <Text numberOfLines={1} ellipsizeMode="tail" style={styles.last}>{item?.message?.text}</Text>
           </View>
         </View>
@@ -47,7 +53,6 @@ export const UserRow: React.FC<UserRowProps> = memo(({ item, theme, s }) => {
           }
         </View>
       </TouchableOpacity>
-      <View style={styles.border} ></View>
     </>
   );
 });

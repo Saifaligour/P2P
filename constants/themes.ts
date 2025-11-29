@@ -1,123 +1,101 @@
-// Full themes object (copied from JADE_Chat_Ultimate)
-const themes = {
+export interface ThemeColors {
+  bg: string;
+  bgSecondary: string;
+  bgImage?: string;
+  sent: string;
+  sentText: string;
+  received: string;
+  receivedText: string;
+  text: string;
+  textSecondary: string;
+  time: string;
+  sentTime: string;
+  receivedTime: string;
+  inputBg: string;
+  inputBorder: string;
+  imageOverlay?: string;
+  fontFamily: string;
+  headerBg: string;
+  headerText: string;
+  cardBg: string;
+  border: string;
+  button: string;
+  inputText: string;
+  shadowColor: string;
+  modalBg: string;
+  iconColor: string;
+  badgeColor: string;
+  avatarBroder: string; // new property
+}
+
+export interface Theme {
+  name: string;
+  dark: ThemeColors;
+  light: ThemeColors;
+}
+
+export type Themes = Record<string, Theme>;
+
+export const themes: Themes = {
   jade: {
     name: 'Jade',
     dark: {
       bg: '#0A0F0D',
+      bgSecondary: '#0A0F0D',
       bgImage: 'https://images.unsplash.com/photo-1506318137071-a8e063b4bec0?w=800&q=80',
       sent: '#00A86B',
-      sentLight: '#00D48A',
-      received: '#121E18',
+      sentText: '#c4e1d4ff',
+      received: '#c4dbd0ff',
+      receivedText: '#121E18',
       text: '#E8F5E9',
-      muted: '#94B49F',
-      inputBg: 'rgba(39, 49, 45, 0.92)',
+      textSecondary: '#E8F5E9',
+      time: '#777',
+      sentTime: '#777',
+      receivedTime: '#777',
+      inputBg: '#27312deb',
       inputBorder: '#00A86B44',
-      imageOverlay: 'rgba(0,0,0,0.35)',
+      imageOverlay: '#00000059',
+      fontFamily: 'System',
+      headerBg: '#08120C',
+      headerText: '#E8F5E9',
+      cardBg: '#121E18',
+      border: '#00A86B33',
+      button: '#00A86B',
+      inputText: '#00A86B',
+      shadowColor: '#00000080',
+      modalBg: '#121E18',
+      iconColor: '#00D48A',
+      badgeColor: '#00A86B',
+      avatarBroder: '#00A86B',
     },
     light: {
       bg: '#F0FDF4',
+      bgSecondary: '#dcfae5ff',
       sent: '#16A34A',
-      sentLight: '#22C55E',
+      sentText: '#ffffffff',
       received: '#DCFCE7',
+      receivedText: '#222',
       text: '#0F1A12',
-      muted: '#4B7A5C',
-      inputBg: 'rgba(255,255,255,0.95)',
+      textSecondary: '#7ba486ff',
+      time: '#959595dd',
+      sentTime: '#dbdbdbdd',
+      receivedTime: '#777',
+      inputBg: '#fffffff2',
       inputBorder: '#16A34A44',
+      fontFamily: 'System',
+      headerBg: '#E6F6EB',
+      headerText: '#0F1A12',
+      cardBg: '#DCFCE7',
+      border: '#16A34A44',
+      button: '#16A34A',
+      inputText: '#327d45ff',
+      shadowColor: 'rgba(255,255,255,0.5)',
+      modalBg: '#d3f6d3ff',
+      iconColor: '#059669',
+      badgeColor: '#059669',
+      avatarBroder: '#16A34A',
     },
-  },
-  turquoise: {
-    name: 'Turquoise',
-    dark: {
-      bg: '#0A1418',
-      sent: '#0D9488',
-      sentLight: '#2DD4BF',
-      received: '#132F33',
-      text: '#E0F7FA',
-      muted: '#94C9C2',
-      inputBg: 'rgba(22, 27, 30, 0.92)',
-      inputBorder: '#0D948844',
-    },
-    light: {
-      bg: '#ECFEFF',
-      sent: '#0891B2',
-      sentLight: '#06B6D4',
-      received: '#CFFAFE',
-      text: '#0C4A6B',
-      muted: '#0E7490',
-      inputBg: 'rgba(255,255,255,0.95)',
-      inputBorder: '#0891B244',
-    },
-  },
-  emerald: {
-    name: 'Emerald',
-    dark: {
-      bg: '#0A120F',
-      sent: '#10B981',
-      sentLight: '#34D399',
-      received: '#121E19',
-      text: '#E8F5F0',
-      muted: '#94B4A4',
-      inputBg: 'rgba(25, 36, 32, 0.92)',
-      inputBorder: '#10B98144',
-    },
-    light: {
-      bg: '#F0FDF4',
-      sent: '#059669',
-      sentLight: '#10B981',
-      received: '#D1FAE5',
-      text: '#0F1A12',
-      muted: '#059669',
-      inputBg: 'rgba(255,255,255,0.95)',
-      inputBorder: '#05966944',
-    },
-  },
-  sapphire: {
-    name: 'Sapphire',
-    dark: {
-      bg: '#0A0F1A',
-      sent: '#3B82F6',
-      sentLight: '#60A5FA',
-      received: '#1E1A2E',
-      text: '#E0E7FF',
-      muted: '#94A3B8',
-      inputBg: 'rgba(23, 23, 34, 0.92)',
-      inputBorder: '#3B82F644',
-    },
-    light: {
-      bg: '#EFF6FF',
-      sent: '#2563EB',
-      sentLight: '#3B82F6',
-      received: '#DBEAFE',
-      text: '#1E293B',
-      muted: '#64748B',
-      inputBg: 'rgba(255,255,255,0.95)',
-      inputBorder: '#2563EB44',
-    },
-  },
-  gold: {
-    name: 'Gold',
-    dark: {
-      bg: '#0F0C08',
-      sent: '#D97706',
-      sentLight: '#F59E0B',
-      received: '#1A170F',
-      text: '#FEF3C7',
-      muted: '#D4A574',
-      inputBg: 'rgba(32, 28, 21, 0.92)',
-      inputBorder: '#D9770644',
-    },
-    light: {
-      bg: '#FFFBEB',
-      sent: '#B45309',
-      sentLight: '#F59E0B',
-      received: '#FEF3C7',
-      text: '#451A03',
-      muted: '#92400E',
-      inputBg: 'rgba(255,255,255,0.95)',
-      inputBorder: '#B4530944',
-      bgImage: 'https://images.unsplash.com/photo-1512453979798-5ea266f8880c?w=800&q=80',
-      imageOverlay: 'rgba(255, 255, 255, 0.50)',
-    },
-  },
+  }
 };
+
 export default themes;

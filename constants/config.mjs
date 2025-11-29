@@ -71,7 +71,7 @@ export const USAGE_EXAMPLES = [
 
 export const PORT = 49737
 export const BOOTSTRAP_NODES = [
-  // '88.99.3.86@node1.hyperdht.org:49737', '142.93.90.113@node2.hyperdht.org:49737', '138.68.147.8@node3.hyperdht.org:49737',
-  `127.0.0.1:${PORT}`, `192.168.1.8:${PORT}`, `192.168.1.255:${PORT}`, `192.168.1.1:${PORT}`
+  '88.99.3.86@node1.hyperdht.org:49737', '142.93.90.113@node2.hyperdht.org:49737', '138.68.147.8@node3.hyperdht.org:49737',
+  // `127.0.0.1:${PORT}`, `192.168.1.8:${PORT}`, `192.168.1.255:${PORT}`, `192.168.1.1:${PORT}`
 ]; // disable public bootstrap nodes
 
