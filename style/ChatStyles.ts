@@ -35,6 +35,7 @@ export const createStyle = (theme: any, s: any, hasBgImage: boolean) => StyleShe
     borderRadius: 28,
     borderWidth: 2,
     borderColor: theme.avatarBroder,
+    overlayColor: theme.imageOverlay
   },
   avatarFallback: {
     width: s(56),                     // avatar size
@@ -70,7 +71,7 @@ export const createStyle = (theme: any, s: any, hasBgImage: boolean) => StyleShe
     fontFamily: theme.fontFamily,
   },
   status: {
-    color: theme.sentLight,
+    color: theme.iconColor,
     fontSize: s(13),
     fontWeight: '700',
     fontFamily: theme.fontFamily,

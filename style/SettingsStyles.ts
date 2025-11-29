@@ -71,7 +71,12 @@ export const createSettingsStyle = (theme: any, s: any) =>
             color: theme.bgSecondary,
             marginTop: 2,
         },
-
+        status: {
+            color: theme.iconColor,
+            fontSize: s(13),
+            fontWeight: '700',
+            fontFamily: theme.fontFamily,
+        },
         row: {
             flexDirection: 'row',
             alignItems: 'center',
