@@ -6,13 +6,15 @@ import { RootState } from '@/Redux/store';
 import { copyToClipboard } from '@/utils/helpter';
 import * as ImagePicker from 'expo-image-picker';
 import { useRouter } from 'expo-router';
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { InteractionManager, Platform } from "react-native";
 import { useDispatch, useSelector, } from 'react-redux';
 
 export const useChat = () => {
+  const flatListRef = useRef<any>(null)
   const dispatch = useDispatch();
   const rawMessages = useSelector((state: RootState) => state.chat.messages);
-  const messages = useMemo(() => Array.from(rawMessages.values()), [rawMessages]);
+  const messages = useMemo(() => Array.from(rawMessages.values()).reverse(), [rawMessages]);
   const userId = useSelector((state: RootState) => state.auth.credentials.userId);
   useEffect(() => {
     dispatch(initializeChatSession());
@@ -33,9 +35,35 @@ export const useChat = () => {
 
   }, []);
 
+  const [isNearBottom, setIsNearBottom] = useState(true);
+  const handleScroll = (event: any) => {
+    const offsetY = event.nativeEvent.contentOffset.y;
+    setIsNearBottom(offsetY <= 50); // consider near bottom if within 50px
+  };
+
+  // Auto-scroll only if user is near bottom
+  useEffect(() => {
+    if (!flatListRef.current || !isNearBottom) return;
+    // Ensure layout is complete before scrolling
+    const id = requestAnimationFrame(() => {
+      flatListRef.current?.scrollToOffset({ offset: 0, animated: true });
+    });
+
+    return () => cancelAnimationFrame(id);
+  }, [messages, isNearBottom]);
+
+  const scrollToBottom = () => {
+    if (flatListRef.current) {
+      flatListRef.current.scrollToOffset({ offset: 0, animated: true });
+    }
+  };
+
   return {
     messages,
     userId,
+    scrollToBottom,
+    handleScroll,
+    flatListRef
   };
 };
 
@@ -57,45 +85,91 @@ export const useHeader = () => {
   };
 };
 
-export const useInputBar = (scrollToBottom: () => void) => {
+export const useInputBar = (
+  scrollToBottom: () => void,
+  sendOnEnter: boolean
+) => {
   const dispatch = useDispatch();
   const [text, setText] = useState('');
 
-  // Helper to send and scroll
-  const finalizeSend = useCallback((content: string, type: string = 'message') => {
+  const textRef = useRef('');
+  textRef.current = text;
+
+  const send = useCallback((content: string, type: string = "message") => {
+    if (!content.trim()) return;
+
     dispatch(sendMessage(content, type));
-    setTimeout(scrollToBottom, 100);
+
+    InteractionManager.runAfterInteractions(() => setText(""));
+    scrollToBottom();
   }, [dispatch, scrollToBottom]);
 
   const handleSendText = useCallback(() => {
-    if (text.trim()) {
-      finalizeSend(text);
-      setText('');
-    }
-  }, [text, finalizeSend]);
+    send(textRef.current.trim());
+  }, [send]);
 
   const handleSendEmoji = useCallback((emoji: string) => {
-    finalizeSend(emoji);
-  }, [finalizeSend]);
+    send(emoji);
+  }, [send]);
 
   const handlePickImage = useCallback(async () => {
-    let result = await ImagePicker.launchImageLibraryAsync({
+    const result = await ImagePicker.launchImageLibraryAsync({
       mediaTypes: ImagePicker.MediaTypeOptions.Images,
       quality: 0.8,
     });
+
     if (!result.canceled && result.assets.length > 0) {
-      finalizeSend(result.assets[0].uri, 'image');
+      send(result.assets[0].uri, "image");
     }
-  }, [finalizeSend]);
+  }, [send]);
+
+
+  // Core multiline + Enter logic
+  const handleChangeText = useCallback(
+    (t: string) => {
+      const cleaned = t.replace(/\r|\n/g, "");
+      const hasNewline = t.includes("\n") || t.includes("\r");
+
+      if (!hasNewline) {
+        // Normal typing
+        setText(cleaned);
+        return;
+      }
+
+      if (sendOnEnter) {
+        // ENTER = send
+        if (cleaned.trim()) send(cleaned.trim());
+        InteractionManager.runAfterInteractions(() => setText(""));
+      } else {
+        // ENTER = insert newline
+        setText(prev => prev + "\n");
+      }
+    },
+    [sendOnEnter, send]
+  );
+
+
+  // iOS onSubmitEditing only fires if blurOnSubmit = true
+  const handleSubmitEditing = useCallback(() => {
+    if (!sendOnEnter) return; // disabled
+    if (Platform.OS === "ios") {
+      const msg = textRef.current.trim();
+      if (msg) send(msg);
+    }
+  }, [sendOnEnter, send]);
+
 
   return {
     text,
-    setText,
+    handleChangeText,
+    handleSubmitEditing,
     handleSendText,
+    handlePickImage,
     handleSendEmoji,
-    handlePickImage
   };
 };
+
+
 
 // THUNK 1: Initialize Chat (Load Messages & Setup Global Listeners)
 export const initializeChatSession: any = () => async (dispatch: any, getState: any) => {

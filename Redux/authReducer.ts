@@ -1,4 +1,5 @@
 
+// eslint-disable-next-line import/no-named-as-default
 import themes from "@/constants/themes";
 
 const SET_AUTH_FIELD = 'SET_AUTH_FIELD';
@@ -13,7 +14,7 @@ const SET_NEW_THEME = 'SET_NEW_THEME';
 const initialState = {
   themes: themes,
   activeTheme: 'jade',
-  mode: 'dark',
+  mode: 'light',
   loading: false,
   error: null,
   credentials: {

@@ -5,7 +5,7 @@ import { createStyle } from '@/style/ChatStyles';
 import { Ionicons } from '@expo/vector-icons';
 
 // import { useHeaderHeight } from '@react-navigation/elements';
-import React, { memo, useEffect, useMemo, useRef } from 'react';
+import React, { memo, useMemo } from 'react';
 import {
   FlatList,
   Image,
@@ -34,7 +34,7 @@ const Header = memo(({ styles, theme, s }: any) => {
             <Text style={styles.avatarName}> {activeUser.avatar}</Text>
           </View>
           : <Image
-            source={{ uri: 'https://randomuser.me/api/portraits/men/32.jpg' }}
+            source={{ uri: activeUser.avatar }}
             style={styles.avatar}
           />}
         <View style={{ marginLeft: 12 }}>
@@ -137,9 +137,15 @@ const Message = memo(({ item, styles, userId, theme, s }: any) => {
 Message.displayName = "Message";
 
 // ---------------- Input Composer ----------------
-const InputBar = memo(({ scrollToBottom, styles, theme, s, }: any) => {
+const InputBar = memo(({ scrollToBottom, styles, theme, s, sendOnEnter = true }: any) => {
   const {
-    text, setText, handleSendText, handleSendEmoji, handlePickImage } = useInputBar(scrollToBottom)
+    text,
+    handleChangeText,
+    handleSubmitEditing,
+    handleSendText,
+    handlePickImage,
+    handleSendEmoji,
+  } = useInputBar(scrollToBottom, sendOnEnter);
 
   return (
     <View style={styles.inputContainer}>
@@ -148,12 +154,14 @@ const InputBar = memo(({ scrollToBottom, styles, theme, s, }: any) => {
       </TouchableOpacity>
 
       <TextInput
-        placeholder="Type a message..."
-        placeholderTextColor={theme.inputText}
         value={text}
-        onChangeText={setText}
-        style={styles.textInput}
         multiline
+        onChangeText={handleChangeText}
+        onSubmitEditing={handleSubmitEditing}
+        placeholderTextColor={theme.inputText}
+        style={[styles.textInput, { color: theme.inputText }]}
+        returnKeyType={sendOnEnter ? "send" : "default"}
+        numberOfLines={4}
       />
 
       {text.trim() ? (
@@ -162,43 +170,33 @@ const InputBar = memo(({ scrollToBottom, styles, theme, s, }: any) => {
         </TouchableOpacity>
       ) : (
         <View style={styles.inputActions}>
-          <TouchableOpacity style={styles.iconButton} onPress={() => handleSendEmoji('😊')}>
+          <TouchableOpacity onPress={() => handleSendEmoji("😊")}>
             <Ionicons name="happy-outline" size={s(26)} color={theme.iconColor} />
           </TouchableOpacity>
-          <TouchableOpacity>
+
+          <TouchableOpacity onPress={handlePickImage}>
             <Ionicons name="camera-outline" size={s(26)} color={theme.iconColor} />
           </TouchableOpacity>
+
           <TouchableOpacity>
             <Ionicons name="mic-outline" size={s(26)} color={theme.iconColor} />
           </TouchableOpacity>
         </View>
       )}
     </View>
-  )
+  );
 });
+
 InputBar.displayName = "InputBar";
 
 // ---------------- Chat Screen ----------------
 const ChatScreen = () => {
   // const headerHeightValue = useHeaderHeight();
   // const headerHeight = Platform.OS === "ios" ? headerHeightValue : 0;
-  const flatListRef = useRef<FlatList<any>>(null);
-  const { messages, userId } = useChat();
+  const { messages, userId, handleScroll, scrollToBottom, flatListRef } = useChat();
   const { theme, s } = useThemeColor();
   const hasBgImage = !!theme.bgImage;
   const styles = useMemo(() => createStyle(theme, s, hasBgImage), [theme, s, hasBgImage]);
-
-  useEffect(() => {
-    if (flatListRef.current && messages.length > 0) {
-      flatListRef.current.scrollToEnd({ animated: true });
-    }
-  }, [messages]);
-
-  const scrollToBottom = () => {
-    if (flatListRef.current) {
-      flatListRef.current.scrollToEnd({ animated: true });
-    }
-  };
 
   const BackgroundWrapper = hasBgImage ? ImageBackground : View;
   const backgroundProps: any = hasBgImage
@@ -217,10 +215,13 @@ const ChatScreen = () => {
           hasBgImage={hasBgImage} styles={styles}
         />
         <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
-
           <FlatList
+            ref={flatListRef}
             data={messages}
             keyExtractor={(item: any) => item.id.toString()}
+            inverted
+            onScroll={handleScroll}
+            scrollEventThrottle={16}
             showsVerticalScrollIndicator={false}
             contentContainerStyle={styles.scrollContent}
             renderItem={({ item }) => <Message userId={userId} item={item} styles={styles} theme={theme} s={s} />}

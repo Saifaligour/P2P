@@ -78,8 +78,7 @@ export const createStyle = (theme: any, s: any, hasBgImage: boolean) => StyleShe
   },
 
   scrollContent: {
-    paddingTop: Platform.OS === 'ios' ? 130 : 110,   // Enough for header
-    paddingBottom: 130,                              // Enough for input bar
+    // paddingBottom: 130,
     paddingHorizontal: 12,
   },
 

@@ -7,6 +7,8 @@ import {
   setAuthLoading
 } from '@/Redux/authReducer';
 import { router } from 'expo-router';
+import { useEffect, useRef, useState } from 'react';
+import { Animated, Easing } from "react-native";
 import { useDispatch, useSelector } from 'react-redux';
 
 export const useAuth = () => {
@@ -57,13 +59,56 @@ export const useAuth = () => {
     }
   };
 
+  const register = () => {
+
+  }
+  const [form, setForm] = useState({ name: '', username: '', password: '' })
+
+  const handleFormChange = (name, value) => {
+    setForm((pre => ({ ...pre, [name]: value })))
+  }
+  // === SHIMMER + GLOW ANIMATION ===
+  const glowAnim = useRef(new Animated.Value(0)).current;
+
+  useEffect(() => {
+    // LOOP: pulse glow
+    Animated.loop(
+      Animated.sequence([
+        Animated.timing(glowAnim, {
+          toValue: 1,
+          duration: 1800,
+          easing: Easing.inOut(Easing.ease),
+          useNativeDriver: true,
+        }),
+        Animated.timing(glowAnim, {
+          toValue: 0,
+          duration: 1800,
+          easing: Easing.inOut(Easing.ease),
+          useNativeDriver: true,
+        }),
+      ])
+    ).start();
+
+  }, []);
+
+  // interpolated glow scale
+  const glowScale = glowAnim.interpolate({
+    inputRange: [0, 1],
+    outputRange: [1, 1.08],
+  });
+
+
   return {
     credentials,
     loading,
     error,
     handleChange,
     login,
-    checkAuth
+    checkAuth,
+    glowScale,
+    register,
+    form,
+    handleFormChange
   };
 };
 

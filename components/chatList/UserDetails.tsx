@@ -15,7 +15,7 @@ export const UserRow: React.FC<UserRowProps> = memo(({ item, theme, s }) => {
   const { handleOpenChat } = useRow(item)
 
   const styles = useMemo(() => createGroupStyle(theme, s), [theme, s]);
-  console.log('UserDetails, UserRow, item', item);
+  // console.log('UserDetails, UserRow, item', item);
   // const OnlineIndicator = () => <View style={styles.onlineDot} />;
   return (
     <>

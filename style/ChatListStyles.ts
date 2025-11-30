@@ -33,9 +33,10 @@ export const createGroupStyle = (theme: any, s: any) => StyleSheet.create({
   avatar: {
     width: s(56),
     height: s(56),
-    borderRadius: s(28),
+    borderRadius: 28,
     borderWidth: 2,
-    borderColor: theme.avatarBorder,
+    borderColor: theme.avatarBroder,
+    overlayColor: theme.imageOverlay
   },
   avatarFallback: {
     width: s(56),                     // avatar size
