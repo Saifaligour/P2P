@@ -1,4 +1,4 @@
-import { setActiveUser } from "@/Redux/chatReducer";
+import { setactiveChat } from "@/Redux/chatReducer";
 import { setSearch, setUserList } from "@/Redux/userListReducer";
 import { FETCH_GROUP_DETAILS, RECEIVE_MESSAGE } from '@/constants/command.mjs';
 import { useRouter } from "expo-router";
@@ -45,14 +45,9 @@ export const useUserList = () => {
 
     dispatch(fetchList())
     const unSubscribe = rpcService.subscribe(RECEIVE_MESSAGE, (data: any) => {
-      if (data) {
-        if (Array.isArray(data.message)) {
-          console.log('useChatList, useRow, hook: RECEIVE_MESSAGE batch', data);
-          dispatch(updateGroupRow(data.message[0]));
-        } else {
-          console.log('useChatList, useRow hook: RECEIVE_MESSAGE', data);
-          dispatch(updateGroupRow(data.message));
-        }
+      if (data && data?.message.text) {
+        console.log('useChatList, useRow hook: RECEIVE_MESSAGE', data);
+        dispatch(updateGroupRow(data.message));
       }
     });
     return () => unSubscribe();
@@ -66,7 +61,7 @@ export const useRow = (item) => {
   const router = useRouter();
   const dispatch = useDispatch();
   const handleOpenChat = () => {
-    dispatch(setActiveUser(item));
+    dispatch(setactiveChat(item));
     router.push("/home/ChatScreen");
   };
 
@@ -113,10 +108,10 @@ export const useSearch = () => {
 const fetchList: any = () => async (dispatch: any) => {
   console.log(`useChatList, fetchList, Inside fetchList method called`);
   const users = await rpcService.send(FETCH_GROUP_DETAILS, {}).reply();
-  console.log(`useChatList, fetchList, Inside fetchList method, users`, users, users.length);
+  // console.log(`useChatList, fetchList, Inside fetchList method, users`, users, users.length);
   if (users?.length) {
     sort(users)
-    console.log('user afte sort ', users);
+    // console.log('user afte sort ', users);
 
     dispatch(setUserList(users));
   }

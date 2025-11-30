@@ -190,7 +190,7 @@ class App {
         return;
       await base.view.ready();
       this.log('newMessageFromPeer', `core lenth :${start}`)
-      stream = base.view.core.createReadStream({ start, live: true });
+      stream = base.view.core.createReadStream({ start });
       for await (const data of stream) {
         const { value } = decode(data)
         this.log('newMessageFromPeer', `Fetched message for group ${groupId}`, value);

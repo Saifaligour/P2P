@@ -1,7 +1,7 @@
 /* eslint-disable react-hooks/exhaustive-deps */
 import { CREATE_INVITE, READ_MESSAGE_FROM_STORE, RECEIVE_MESSAGE, SEND_MESSAGE } from '@/constants/command.mjs';
 import { rpcService } from '@/hooks/RPC';
-import { addMessage, addMessageInBatchs, loadMessages } from '@/Redux/chatReducer';
+import { addMessage, loadMessages } from '@/Redux/chatReducer';
 import { RootState } from '@/Redux/store';
 import { copyToClipboard } from '@/utils/helpter';
 import * as ImagePicker from 'expo-image-picker';
@@ -21,11 +21,7 @@ export const useChat = () => {
 
     const unSubscribe = rpcService.subscribe(RECEIVE_MESSAGE, (data: any) => {
       // Logic to prevent adding our own messages twice (if backend echoes them)
-      if (Array.isArray(data.message)) {
-        if (data.message[0]?.sender === userId) return;
-        console.log('useChat, hook: RECEIVE_MESSAGE batch', data);
-        dispatch(addMessageInBatchs(data.message));
-      } else {
+      if (data) {
         if (data.message?.sender === userId) return;
         console.log('useChat hook: RECEIVE_MESSAGE', data);
         dispatch(addMessage(data.message));
@@ -71,7 +67,7 @@ export const useChat = () => {
 export const useHeader = () => {
   const router = useRouter();
   // Selectors
-  const activeUser: any = useSelector((state: RootState) => state.chat.activeUser);
+  const activeChat: any = useSelector((state: RootState) => state.chat.activeChat);
   const connection = useSelector((state: RootState) => state.chat.connection);
 
   // Actions
@@ -79,7 +75,7 @@ export const useHeader = () => {
 
   // Return exactly what the View needs
   return {
-    activeUser,
+    activeChat,
     connection,
     goBack,
   };
@@ -174,14 +170,14 @@ export const useInputBar = (
 // THUNK 1: Initialize Chat (Load Messages & Setup Global Listeners)
 export const initializeChatSession: any = () => async (dispatch: any, getState: any) => {
   const state = getState();
-  const { activeUser } = state.chat;
+  const { activeChat } = state.chat;
   // Validation: If no active group, stop.
-  if (!activeUser || !activeUser.groupId) return;
+  if (!activeChat || !activeChat.groupId) return;
 
   // 1. Load Past Messages
   try {
     const message = await rpcService
-      .send(READ_MESSAGE_FROM_STORE, { groupId: activeUser.groupId })
+      .send(READ_MESSAGE_FROM_STORE, { groupId: activeChat.groupId })
       .reply();
 
     if (message) {
@@ -197,11 +193,11 @@ export const initializeChatSession: any = () => async (dispatch: any, getState: 
 export const sendMessage: any = (text: any, type: string = 'message') => async (dispatch: any, getState: any) => {
   // 1. Get State
   const state = getState();
-  const { activeUser } = state.chat;
+  const { activeChat } = state.chat;
   const { userId } = state.auth.credentials;
 
   // 2. Validation
-  if (!text.trim() || !activeUser?.groupId) return;
+  if (!text.trim() || !activeChat?.groupId) return;
 
   const now = new Date().toLocaleTimeString([], {
     hour: '2-digit',
@@ -214,7 +210,7 @@ export const sendMessage: any = (text: any, type: string = 'message') => async (
     type: type,
     sender: userId,
     timestamp: now,
-    groupId: activeUser.groupId,
+    groupId: activeChat.groupId,
     id: Date.now().toString(),
   };
 

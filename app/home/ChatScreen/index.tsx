@@ -22,27 +22,27 @@ import {
 
 // ---------------- Header ----------------
 const Header = memo(({ styles, theme, s }: any) => {
-  const { activeUser, connection, goBack }: any = useHeader()
+  const { activeChat, connection, goBack }: any = useHeader()
   return (
     <View style={styles.header} pointerEvents="box-none">
       <TouchableOpacity onPress={() => goBack()}>
         <Ionicons name="arrow-back" size={s(32)} color={theme.iconColor} />
       </TouchableOpacity>
       <View style={styles.headerInfo}>
-        {activeUser?.avatarType === 'name' ?
+        {activeChat?.avatarType === 'name' ?
           <View style={styles.avatarFallback}>
-            <Text style={styles.avatarName}> {activeUser.avatar}</Text>
+            <Text style={styles.avatarName}> {activeChat.avatar}</Text>
           </View>
           : <Image
-            source={{ uri: activeUser.avatar }}
+            source={{ uri: activeChat.avatar }}
             style={styles.avatar}
           />}
         <View style={{ marginLeft: 12 }}>
-          <Text style={styles.name}>{activeUser ? activeUser.name : 'Chat'}</Text>
+          <Text style={styles.name}>{activeChat ? activeChat.name : 'Chat'}</Text>
           <Text style={styles.status}>Online</Text>
         </View>
         <View style={{ marginLeft: 12 }}>
-          {activeUser?.isGroup && connection?.current && (
+          {activeChat?.isGroup && connection?.current && (
             <Text style={styles.status}>{connection?.current} members</Text>
           )}
         </View>
@@ -50,7 +50,7 @@ const Header = memo(({ styles, theme, s }: any) => {
       <View style={styles.headerActions}>
         <TouchableOpacity><Ionicons name="videocam" size={s(28)} color={theme.iconColor} /></TouchableOpacity>
         <TouchableOpacity><Ionicons name="call" size={s(28)} color={theme.iconColor} /></TouchableOpacity>
-        <TouchableOpacity onPress={() => createInvite(activeUser?.groupId)}><Ionicons name="link" size={s(28)} color={theme.iconColor} /></TouchableOpacity>
+        <TouchableOpacity onPress={() => createInvite(activeChat?.groupId)}><Ionicons name="link" size={s(28)} color={theme.iconColor} /></TouchableOpacity>
         <TouchableOpacity><Ionicons name="ellipsis-vertical" size={s(28)} color={theme.iconColor} /></TouchableOpacity>
       </View>
     </View>

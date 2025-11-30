@@ -6,7 +6,7 @@ const ADD_MESSAGE_IN_BATCH = 'ADD_MESSAGE_IN_BATCH';
 
 const initialState = {
   messages: new Map(),
-  activeUser: null,
+  activeChat: null,
   connection: {},
 };
 
@@ -24,7 +24,7 @@ export const chatReducer = (state = initialState, action) => {
       };
     }
     case ADD_MESSAGE: {
-      if (state.activeUser && action.payload && state.activeUser.groupId === action.payload.groupId) {
+      if (state.activeChat && action.payload && state.activeChat.groupId === action.payload.groupId) {
         // action.payload is a single message {id, ...}
         const msgMap = new Map(state.messages);
         msgMap.set(action.payload.id, action.payload);
@@ -51,7 +51,7 @@ export const chatReducer = (state = initialState, action) => {
     case SET_ACTIVE_USER:
       return {
         ...state,
-        activeUser: action.payload,
+        activeChat: action.payload,
       };
     default:
       return state;
@@ -75,7 +75,7 @@ export const addMessageInBatchs = (messages) => ({
   payload: messages, // array of messages [{id, ...}]
 });
 
-export const setActiveUser = (user) => ({
+export const setactiveChat = (user) => ({
   type: SET_ACTIVE_USER,
   payload: user,
 });
