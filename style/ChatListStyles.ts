@@ -147,7 +147,7 @@ export const searchGroupStyle = (theme: any, s: any) => StyleSheet.create({
     alignItems: 'center',
     borderWidth: 0.30,
     borderColor: theme.inputBorder,
-    // shadowColor: theme.sent,
+    // shadowColor: theme.shadowColor,
     shadowOpacity: 0.05,
     shadowRadius: 40,
     elevation: 18,

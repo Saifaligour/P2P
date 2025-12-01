@@ -154,7 +154,7 @@ export const createStyle = (theme: any, s: any, hasBgImage: boolean) => StyleShe
     alignItems: 'center',
     borderWidth: 2,
     borderColor: theme.inputBorder,
-    shadowColor: theme.inputBorder,
+    shadowColor: theme.shadowColor,
     shadowOpacity: 0.3,
     shadowRadius: 15,
     elevation: 18,

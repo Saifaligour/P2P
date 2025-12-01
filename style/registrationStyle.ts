@@ -103,7 +103,7 @@ export const createRegistrationStyle = (theme: any, s: any, hasBgImage = false) 
             alignItems: "center",
             borderWidth: 2,
             borderColor: theme.inputBorder,
-            shadowColor: theme.inputBorder,
+            shadowColor: theme.shadowColor,
             shadowOpacity: 0.3,
             shadowRadius: s(16),
             elevation: 16,

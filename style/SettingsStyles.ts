@@ -49,7 +49,7 @@ export const createSettingsStyle = (theme: any, s: any) =>
             borderWidth: 1,
             borderColor: theme.avatarBroder,
             marginBottom: 10,
-            shadowColor: theme.avatarBroder,
+            shadowColor: theme.shadowColor,
             shadowOpacity: 0.08,
             shadowRadius: 12,
             elevation: 3,
