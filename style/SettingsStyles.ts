@@ -1,10 +1,11 @@
-import { StyleSheet } from 'react-native';
+import { Platform, StyleSheet } from 'react-native';
 
 export const createSettingsStyle = (theme: any, s: any) =>
     StyleSheet.create({
         container: {
             flex: 1,
             backgroundColor: theme.bg,
+            paddingTop: Platform.OS === 'ios' ? 50 : 40,
         },
 
         header: {

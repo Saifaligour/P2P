@@ -1,7 +1,9 @@
 import { Platform, StyleSheet } from "react-native";
 
 export const createStyle = (theme: any, s: any, hasBgImage: boolean) => StyleSheet.create({
-  container: { flex: 1 },
+  container: {
+    flex: 1,
+  },
   overlay: {
     ...StyleSheet.absoluteFillObject,
     backgroundColor: theme.imageOverlay || 'transparent',
@@ -9,10 +11,10 @@ export const createStyle = (theme: any, s: any, hasBgImage: boolean) => StyleShe
   safeArea: {
     flex: 1,
     backgroundColor: hasBgImage ? 'transparent' : theme.bg,
+    paddingTop: Platform.OS === 'ios' ? 50 : 40,
   },
   header: {
     position: 'fixed',
-    top: Platform.OS === 'ios' ? 0 : 60,
     flexDirection: 'row',
     alignItems: 'center',
     // zIndex: 10,
@@ -149,7 +151,7 @@ export const createStyle = (theme: any, s: any, hasBgImage: boolean) => StyleShe
     backgroundColor: theme.inputBg,
     borderRadius: 30,
     paddingHorizontal: 18,
-    paddingVertical: 14,
+    paddingVertical: 8,
     flexDirection: 'row',
     alignItems: 'center',
     borderWidth: 2,
@@ -158,7 +160,7 @@ export const createStyle = (theme: any, s: any, hasBgImage: boolean) => StyleShe
     shadowOpacity: 0.3,
     shadowRadius: 15,
     elevation: 18,
-    marginBottom: 8,
+    marginBottom: Platform.OS === 'ios' ? 0 : 60,
     marginTop: 10,
     marginHorizontal: 18,
   },

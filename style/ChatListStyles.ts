@@ -2,9 +2,10 @@ import { Platform, StyleSheet } from "react-native";
 
 export const createStyle = (theme: any, s: any) => StyleSheet.create({
   safeArea: {
-    paddingTop: Platform.OS === 'ios' ? 60 : 40,
     backgroundColor: theme.bg,
     flex: 1,
+    paddingTop: Platform.OS === 'ios' ? 50 : 40,
+
   },
   headerRow: {
     flexDirection: 'row',
@@ -142,15 +143,15 @@ export const searchGroupStyle = (theme: any, s: any) => StyleSheet.create({
     backgroundColor: theme.inputBg,
     borderRadius: 30,
     paddingHorizontal: 18,
-    paddingVertical: 12,
+    paddingVertical: 8,
     flexDirection: 'row',
     alignItems: 'center',
     borderWidth: 0.30,
     borderColor: theme.inputBorder,
-    // shadowColor: theme.shadowColor,
+    shadowColor: theme.shadowColor,
     shadowOpacity: 0.05,
     shadowRadius: 40,
-    elevation: 18,
+    // elevation: 1,
     marginHorizontal: 18,
   },
   textInput: {
@@ -170,7 +171,6 @@ export const headerStyle = (themes: any, s: any) => StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'space-between',
     marginBottom: 8,
-    paddingTop: Platform.OS === 'ios' ? 0 : 40,
     zIndex: 10,
     paddingHorizontal: 12,
   },

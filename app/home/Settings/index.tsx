@@ -7,10 +7,9 @@ import {
     FlatList,
     Image,
     SafeAreaView,
-    StatusBar,
     Text,
     TouchableOpacity,
-    View,
+    View
 } from 'react-native';
 
 const Header = memo(({ styles, theme, s, nextTheme, setIsDark }: any) => {
@@ -99,7 +98,6 @@ const SettingsScreen = () => {
 
     return (
         <SafeAreaView style={styles.container}>
-            <StatusBar translucent backgroundColor="transparent" />
 
             <Header styles={styles} theme={theme} s={s} nextTheme={nextTheme} setIsDark={setIsDark} />
 

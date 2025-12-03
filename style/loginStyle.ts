@@ -7,6 +7,7 @@ export const createStyle = (theme: any, s: any, hasBgImage = false) =>
       flex: 1,
       backgroundColor: hasBgImage ? "transparent" : theme.bg,
       justifyContent: "center",
+      paddingTop: Platform.OS === 'ios' ? 50 : 40,
     },
 
     overlay: {

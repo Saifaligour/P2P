@@ -4,7 +4,6 @@ import { createStyle } from '@/style/ChatListStyles';
 import React, { useMemo } from 'react';
 import {
   FlatList,
-  StatusBar,
   View
 } from 'react-native';
 
@@ -21,7 +20,6 @@ const GroupChatScreen = () => {
 
   return (
     <View style={styles.safeArea}>
-      <StatusBar />
       <GroupListHeader theme={theme} s={s} />
       <SearchBar theme={theme} s={s} />
       <FlatList

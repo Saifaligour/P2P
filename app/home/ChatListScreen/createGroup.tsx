@@ -4,7 +4,7 @@ import { BackButton } from '@/components/ui/BackButton';
 import { useCreateUser } from '@/hooks/useCreateUser';
 import { useThemeColor } from '@/hooks/useThemeColor';
 import React, { useMemo, useState } from 'react';
-import { SafeAreaView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { Platform, SafeAreaView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 
 export default function CreateGroupScreen() {
   const [mode, setMode] = useState<'create' | 'join'>('create');
@@ -82,7 +82,9 @@ export default function CreateGroupScreen() {
 
 const createStyles = (theme: any, s: any) =>
   StyleSheet.create({
-    safe: { flex: 1, backgroundColor: theme.bg },
+    safe: {
+      flex: 1, backgroundColor: theme.bg, paddingTop: Platform.OS === 'ios' ? 0 : 40,
+    },
     container: { flex: 1, padding: s(24) },
     switchContainer: { flexDirection: 'row', justifyContent: 'center', marginBottom: s(24) },
     switchBtn: {

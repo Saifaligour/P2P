@@ -1,13 +1,15 @@
 import { useAuth } from "@/hooks/useAuth";
-import { useEffect } from "react";
+import { useThemeColor } from "@/hooks/useThemeColor";
+import { useEffect, useMemo } from "react";
 import { ActivityIndicator, StyleSheet, Text, View } from "react-native";
 
 export default function SplashScreen() {
   const { checkAuth } = useAuth();
-
+  const { theme, s } = useThemeColor()
   useEffect(() => {
     checkAuth();
   }, []);
+  const styles = useMemo(() => createStyle(theme, s), [theme, s]);
 
   return (
     <View style={styles.container}>
@@ -17,7 +19,16 @@ export default function SplashScreen() {
   );
 }
 
-const styles = StyleSheet.create({
-  container: { flex: 1, justifyContent: "center", alignItems: "center" },
-  title: { fontSize: 32, fontWeight: "bold", marginBottom: 20 },
-});
+const createStyle = (theme: any, s: any) =>
+  StyleSheet.create({
+    container: {
+      flex: 1, justifyContent: "center", alignItems: "center",
+      backgroundColor: theme.bg
+    },
+    title: {
+      color: theme.text,
+      fontSize: s(20),
+      fontWeight: '600',
+      fontFamily: theme.fontFamily,
+    },
+  });
